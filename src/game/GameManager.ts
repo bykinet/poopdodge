@@ -177,11 +177,12 @@ export class GameManager {
   };
 
   private handleJudgment = (event: JudgmentEvent) => {
-    // 1. Audio feedback
+    // 1. Audio & 3D feedback
     if (event.judgment === 'Hit') {
       soundManager.playHit();
     } else if (event.judgment === 'Close') {
       soundManager.playClose(event.currentStreak);
+      this.threeScene.triggerDodgeSpin(); // 3D acrobatic dodge spin!
     } else {
       soundManager.playClean();
     }
@@ -212,6 +213,7 @@ export class GameManager {
   };
 
   private handleItemCaught = (event: { itemStreak: number; scoreGained: number; isDouble: boolean; x: number }) => {
+    this.threeScene.triggerCatchHop(); // 3D catch leap!
     if (event.isDouble) {
       soundManager.playCheer();
     } else {

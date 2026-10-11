@@ -19,6 +19,12 @@ export class ThreeScene {
   private climaxSkyColor: THREE.Color;
   private buttGroup: THREE.Group;
 
+  // Dynamic 3D animation states
+  private lastPlayerX: number = 50;
+  private currentTilt: number = 0;
+  private catchHopTimer: number = 0;
+  private dodgeSpinTimer: number = 0;
+
   // Textures
   private poopTexture: THREE.Texture | null = null;
   private toiletPaperTexture: THREE.Texture | null = null;
@@ -36,9 +42,11 @@ export class ThreeScene {
     // Load textures
     const textureLoader = new THREE.TextureLoader();
     textureLoader.load('/game-assets/items/poop.png', (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
       this.poopTexture = tex;
     });
     textureLoader.load('/game-assets/items/toilet_paper.png', (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
       this.toiletPaperTexture = tex;
     });
 
@@ -48,7 +56,7 @@ export class ThreeScene {
     this.climaxSkyColor = new THREE.Color(0x282348);
     this.scene.background = this.skyColor.clone();
 
-    // Camera: slightly elevated Front fixed camera
+    // Camera: slightly elevated Front fixed camera with dynamic 3D depth perception
     const aspect = config.container.clientWidth / config.container.clientHeight || 16 / 9;
     this.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
     this.camera.position.set(50, 32, 70);
@@ -64,7 +72,7 @@ export class ThreeScene {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
     this.scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfff5e6, 0.8);
+    const dirLight = new THREE.DirectionalLight(0xfff5e6, 0.85);
     dirLight.position.set(50, 60, 40);
     this.scene.add(dirLight);
 
@@ -72,12 +80,12 @@ export class ThreeScene {
     this.ground = this.createAlleyEnvironment();
     this.scene.add(this.ground);
 
-    // Giant Butt (Apricot silhouette width ~27 [40 * 2/3] at top center)
+    // Giant Butt (Apricot silhouette width ~27 at top center)
     this.buttGroup = this.createGiantButt();
-    this.buttGroup.position.set(50, 52, -5); // Hidden above top initially
+    this.buttGroup.position.set(50, 52, -5);
     this.scene.add(this.buttGroup);
 
-    // Player Billboard (scaled to 2/3: width ~5.33, height 8.0)
+    // Player Billboard (scaled to 2/3: width ~5.33, height 8.0, transparent cutout)
     const playerWidth = 8 * (2 / 3);
     const playerHeight = 12 * (2 / 3);
     const playerGeo = new THREE.PlaneGeometry(playerWidth, playerHeight);
@@ -85,6 +93,7 @@ export class ThreeScene {
       color: 0xffffff,
       side: THREE.DoubleSide,
       transparent: true,
+      alphaTest: 0.08, // Cutout transparent background cleanly!
     });
     this.playerMesh = new THREE.Mesh(playerGeo, this.playerMaterial);
     this.playerMesh.position.set(50, playerHeight / 2, 0);
@@ -108,7 +117,7 @@ export class ThreeScene {
 
     // Alley pavement [0, 100]
     const groundGeo = new THREE.PlaneGeometry(120, 40);
-    const groundMat = new THREE.MeshLambertMaterial({ color: 0xd6cbb8 }); // Warm brick stone
+    const groundMat = new THREE.MeshLambertMaterial({ color: 0xd6cbb8 });
     const groundMesh = new THREE.Mesh(groundGeo, groundMat);
     groundMesh.rotation.x = -Math.PI / 2;
     groundMesh.position.set(50, 0, 0);
@@ -126,14 +135,14 @@ export class ThreeScene {
     rightWall.position.set(102, 15, 0);
     groundGroup.add(rightWall);
 
-    // Back wall / alley buildings
+    // Back wall
     const backGeo = new THREE.BoxGeometry(110, 40, 2);
     const backMat = new THREE.MeshLambertMaterial({ color: 0xa99f92 });
     const backWall = new THREE.Mesh(backGeo, backMat);
     backWall.position.set(50, 20, -10);
     groundGroup.add(backWall);
 
-    // Warm street lamp on alley
+    // Warm street lamp
     const lampPoleGeo = new THREE.CylinderGeometry(0.3, 0.4, 20);
     const lampMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
     const lamp = new THREE.Mesh(lampPoleGeo, lampMat);
@@ -149,24 +158,20 @@ export class ThreeScene {
 
   private createGiantButt(): THREE.Group {
     const group = new THREE.Group();
-    // 2/3 scale apricot silhouette
     const buttMat = new THREE.MeshLambertMaterial({ color: 0xffbfa3 });
 
-    // Left cheek
     const leftCheekGeo = new THREE.SphereGeometry(8, 24, 24);
     const leftCheek = new THREE.Mesh(leftCheekGeo, buttMat);
     leftCheek.position.set(-5.5, 0, 0);
     leftCheek.scale.set(1.1, 1.2, 0.8);
     group.add(leftCheek);
 
-    // Right cheek
     const rightCheekGeo = new THREE.SphereGeometry(8, 24, 24);
     const rightCheek = new THREE.Mesh(rightCheekGeo, buttMat);
     rightCheek.position.set(5.5, 0, 0);
     rightCheek.scale.set(1.1, 1.2, 0.8);
     group.add(rightCheek);
 
-    // Comic outline
     const creaseGeo = new THREE.CylinderGeometry(0.5, 0.5, 10);
     const creaseMat = new THREE.MeshBasicMaterial({ color: 0xdf8d71 });
     const crease = new THREE.Mesh(creaseGeo, creaseMat);
@@ -184,11 +189,12 @@ export class ThreeScene {
         tex.colorSpace = THREE.SRGBColorSpace;
         this.playerMaterial.map = tex;
         this.playerMaterial.color.setHex(0xffffff);
+        this.playerMaterial.transparent = true;
+        this.playerMaterial.alphaTest = 0.08;
         this.playerMaterial.needsUpdate = true;
       },
       undefined,
       () => {
-        // Fallback color if not loadable
         this.playerMaterial.color.setHex(0x3b82f6);
       }
     );
@@ -200,6 +206,14 @@ export class ThreeScene {
     this.playerMaterial.needsUpdate = true;
   }
 
+  public triggerCatchHop() {
+    this.catchHopTimer = 0.35;
+  }
+
+  public triggerDodgeSpin() {
+    this.dodgeSpinTimer = 0.32;
+  }
+
   public update(
     playerX: number,
     invincibleTimer: number,
@@ -208,24 +222,88 @@ export class ThreeScene {
     isClimax: boolean,
     dt: number
   ) {
-    // 1. Update Player
+    // 1. Calculate dynamic player velocity & 3D action
+    const dx = playerX - this.lastPlayerX;
+    this.lastPlayerX = playerX;
+    const vx = dx / Math.max(dt, 0.001);
+
+    // Target dynamic 3D sprint lean / tilt angle
+    let targetTilt = 0;
+    if (vx < -3) {
+      targetTilt = -0.36; // Dynamic 3D sprint bank left (-20 deg)
+    } else if (vx > 3) {
+      targetTilt = 0.36; // Dynamic 3D sprint bank right (+20 deg)
+    }
+
+    // Smooth tilt interpolation
+    this.currentTilt += (targetTilt - this.currentTilt) * Math.min(1, dt * 14);
+
+    // Vertical running stride hop / bounce & idle breathing
+    const isRunning = Math.abs(vx) > 3;
+    const runBounce = isRunning ? Math.abs(Math.sin(performance.now() * 0.016)) * 0.55 : 0;
+    const idleBreathe = !isRunning ? Math.sin(performance.now() * 0.004) * 0.15 : 0;
+
+    // Process catch hop & dodge somersault spin
+    let specialHop = 0;
+    if (this.catchHopTimer > 0) {
+      this.catchHopTimer -= dt;
+      specialHop = Math.sin((1 - this.catchHopTimer / 0.35) * Math.PI) * 1.8;
+    }
+
+    let spinRotation = 0;
+    if (this.dodgeSpinTimer > 0) {
+      this.dodgeSpinTimer -= dt;
+      spinRotation = (1 - this.dodgeSpinTimer / 0.32) * Math.PI * 2; // Full 360 somersault!
+    }
+
+    const basePlayerY = 4.0;
     this.playerMesh.position.x = playerX;
+    this.playerMesh.position.y = basePlayerY + runBounce + idleBreathe + specialHop;
+
+    // Dynamic 3D depth oscillation along Z axis
+    this.playerMesh.position.z = isRunning ? Math.sin(performance.now() * 0.016) * 0.6 : 0;
+
     if (invincibleTimer > 0) {
-      // Blinking invincibility effect
+      // Comedic 3D wobble on hit
+      this.playerMesh.rotation.z = Math.sin(invincibleTimer * 38) * 0.4;
+      this.playerMesh.rotation.y = Math.sin(invincibleTimer * 20) * 0.4;
+      this.playerMesh.rotation.x = 0.25;
       const blink = Math.sin(invincibleTimer * 30) > 0;
       this.playerMaterial.opacity = blink ? 0.35 : 0.9;
     } else {
+      // Dynamic 3D running lean, banking, and face-turn
+      this.playerMesh.rotation.z = this.currentTilt + spinRotation;
+      this.playerMesh.rotation.y = -this.currentTilt * 0.75; // 3D yaw face towards motion
+      this.playerMesh.rotation.x = isRunning ? 0.18 : 0.0; // 3D pitch sprint lean forward
       this.playerMaterial.opacity = 1.0;
     }
 
-    // 2. Climax sky & giant butt
+    // Dynamic squash-and-stretch
+    if (isRunning) {
+      this.playerMesh.scale.set(0.9, 1.12, 1.0);
+    } else if (specialHop > 0) {
+      this.playerMesh.scale.set(1.12, 0.88, 1.0);
+    } else {
+      this.playerMesh.scale.set(1.0, 1.0, 1.0);
+    }
+
+    // 2. Climax sky & dynamic 3D giant butt pulse
     const targetSky = isClimax ? this.climaxSkyColor : this.skyColor;
     (this.scene.background as THREE.Color).lerp(targetSky, dt * 4.0);
 
     const targetButtY = isClimax ? 34 : 52;
     this.buttGroup.position.y += (targetButtY - this.buttGroup.position.y) * Math.min(1, dt * 5);
 
-    // 3. Poops & Shadows
+    if (isClimax) {
+      const pulse = 1.0 + Math.sin(performance.now() * 0.008) * 0.09;
+      this.buttGroup.scale.set(pulse, pulse * 1.05, pulse);
+      this.buttGroup.rotation.z = Math.sin(performance.now() * 0.005) * 0.06;
+    } else {
+      this.buttGroup.scale.set(1, 1, 1);
+      this.buttGroup.rotation.z = 0;
+    }
+
+    // 3. Poops with dynamic 3D tumbling rotation
     const activePoopIds = new Set<number>();
     for (const poop of poops) {
       activePoopIds.add(poop.id);
@@ -239,14 +317,21 @@ export class ThreeScene {
         if (meshObj.ring) this.scene.add(meshObj.ring);
       }
 
-      // Height decreases from 1 (sky, y ~ 32) down to 0 (ground, y ~ 1)
+      // Height decreases from 1 down to 0
       const poopY = 1 + poop.height * 31;
       meshObj.mesh.position.set(poop.x, poopY, 0);
 
-      // Shadow center is poop x on ground
-      meshObj.shadow.position.set(poop.x, 0.05, 0);
+      // True 3D tumbling rotation around multiple axes!
+      meshObj.mesh.rotation.x = poop.elapsedTime * 3.6;
+      meshObj.mesh.rotation.y = poop.elapsedTime * 2.8;
+      meshObj.mesh.rotation.z = Math.sin(poop.elapsedTime * 7) * 0.45;
 
-      // Shadow radius: 30% at height 1, 100% at height 0
+      // Dynamic 3D squash-and-stretch wobble
+      const jiggle = Math.sin(poop.elapsedTime * 14 + poop.id) * 0.14;
+      meshObj.mesh.scale.set(1.0 + jiggle, 1.0 - jiggle, 1.0);
+
+      // Shadow on ground
+      meshObj.shadow.position.set(poop.x, 0.05, 0);
       const shadowScaleFactor = 0.3 + 0.7 * (1.0 - poop.height);
       const currentRadius = poop.radius * shadowScaleFactor;
 
@@ -267,7 +352,7 @@ export class ThreeScene {
       }
     }
 
-    // 4. Collectible Items (Toilet paper)
+    // 4. Collectible Items with 3D multi-axis tumbling and floating wave
     const activeItemIds = new Set<number>();
     for (const item of items) {
       activeItemIds.add(item.id);
@@ -282,7 +367,12 @@ export class ThreeScene {
 
       const itemY = 1 + item.height * 31;
       itemObj.mesh.position.set(item.x, itemY, 0);
-      itemObj.mesh.rotation.z = Math.sin(item.elapsedTime * 6) * 0.15; // gentle playful sway
+
+      // True 3D multi-axis fluttering, spinning, and depth floating
+      itemObj.mesh.rotation.x = item.elapsedTime * 2.5;
+      itemObj.mesh.rotation.y += dt * 4.0;
+      itemObj.mesh.rotation.z = Math.sin(item.elapsedTime * 6) * 0.5;
+      itemObj.mesh.position.z = Math.sin(item.elapsedTime * 4) * 0.8;
 
       itemObj.shadow.position.set(item.x, 0.05, 0);
       const shadowScaleFactor = 0.3 + 0.7 * (1.0 - item.height);
@@ -309,12 +399,12 @@ export class ThreeScene {
     const poopMat = new THREE.MeshBasicMaterial({
       map: this.poopTexture,
       transparent: true,
+      alphaTest: 0.08, // Cutout transparent background cleanly!
       side: THREE.DoubleSide,
-      color: this.poopTexture ? 0xffffff : poop.type === 'giant' ? 0x5a2d0c : 0x7a431d,
+      color: 0xffffff,
     });
     const mesh = new THREE.Mesh(poopGeo, poopMat);
 
-    // Ground Shadow disk
     const shadowGeo = new THREE.CircleGeometry(1, 32);
     const shadowMat = new THREE.MeshBasicMaterial({
       color: 0x1a120b,
@@ -324,7 +414,6 @@ export class ThreeScene {
     const shadow = new THREE.Mesh(shadowGeo, shadowMat);
     shadow.rotation.x = -Math.PI / 2;
 
-    // Thin outline border
     let ring: THREE.LineLoop | undefined;
     if (this.showShadowBorder) {
       const ringGeo = new THREE.BufferGeometry();
@@ -348,12 +437,12 @@ export class ThreeScene {
     const itemMat = new THREE.MeshBasicMaterial({
       map: this.toiletPaperTexture,
       transparent: true,
+      alphaTest: 0.08, // Cutout transparent background cleanly!
       side: THREE.DoubleSide,
-      color: this.toiletPaperTexture ? 0xffffff : 0xffffff,
+      color: 0xffffff,
     });
     const mesh = new THREE.Mesh(itemGeo, itemMat);
 
-    // Soft cyan/gold ground shadow for items
     const shadowGeo = new THREE.CircleGeometry(1, 24);
     const shadowMat = new THREE.MeshBasicMaterial({
       color: 0x0284c7,
