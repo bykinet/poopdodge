@@ -301,27 +301,26 @@ export class ThreeScene {
     const requiredWidth = 112;
 
     if (aspect >= 1.6) {
-      // Desktop / Landscape (16:9, etc.)
-      this.camera.fov = 45;
-      this.camera.position.set(50, 32, 70);
-      this.camera.lookAt(50, 14, 0);
+      // Landscape (Desktop 16:9, Ultra-wide mobile 19:9/20:9, etc.)
+      // Center camera vertically at y=25 between King Butt (y=52) and Player (y=0) so both are 100% visible
+      this.camera.fov = 48;
+      this.camera.position.set(50, 28, 72);
+      this.camera.lookAt(50, 25, 0);
     } else {
       // Responsive for Tablets & Mobile Portrait (aspect < 1.6)
-      // Smoothly scale FOV between 45 and 58 deg to eliminate distortion
-      const targetFOV = Math.min(58, Math.max(45, 45 + (1.6 - aspect) * 12));
+      // Smoothly scale FOV between 48 and 58 deg to eliminate distortion
+      const targetFOV = Math.min(58, Math.max(48, 48 + (1.6 - aspect) * 10));
       const tanHalfVFOV = Math.tan(THREE.MathUtils.degToRad(targetFOV / 2));
       const tanHalfHFOV = tanHalfVFOV * aspect;
 
       // Calculate target Z distance needed to see requiredWidth
       const targetDistZ = (requiredWidth / 2) / tanHalfHFOV;
 
-      // Adjust camera elevation so King Butt (y=52) and Player (y=0) are framed
-      // in the upper/mid portion of the screen, leaving comfortable space above bottom controls
-      const targetElevY = 24 + targetDistZ * 0.22;
+      const targetElevY = 24 + targetDistZ * 0.18;
 
       this.camera.fov = targetFOV;
       this.camera.position.set(50, targetElevY, targetDistZ);
-      this.camera.lookAt(50, 24, 0);
+      this.camera.lookAt(50, 25, 0);
     }
 
     this.camera.updateProjectionMatrix();

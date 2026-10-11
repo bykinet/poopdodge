@@ -138,28 +138,30 @@ export const FirstPage: React.FC<FirstPageProps> = ({ onLoginSuccess }) => {
     <div
       style={{
         width: '100%',
-        height: '100%',
+        height: '100dvh',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
         background: 'radial-gradient(circle at center, #1e2040 0%, #0b0b1a 100%)',
-        padding: '24px',
+        padding: 'clamp(10px, 2.5vh, 24px)',
         textAlign: 'center',
+        overflowY: 'auto',
       }}
     >
-      <div style={{ maxWidth: '520px', width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ maxWidth: '520px', width: '100%', display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 2vh, 18px)' }}>
         {/* Title Logo */}
         <div>
-          <div style={{ fontSize: '56px', marginBottom: '8px' }}>💩💨</div>
+          <div style={{ fontSize: 'clamp(32px, 7vh, 54px)', marginBottom: '4px' }}>💩💨</div>
           <h1
             style={{
-              fontSize: '44px',
+              fontSize: 'clamp(26px, 5.5vh, 42px)',
               fontWeight: 800,
               background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               letterSpacing: '-1px',
+              lineHeight: 1.15,
             }}
           >
             Poop Dodge
@@ -167,9 +169,9 @@ export const FirstPage: React.FC<FirstPageProps> = ({ onLoginSuccess }) => {
           <p
             style={{
               color: '#cbd5e1',
-              fontSize: '15px',
-              lineHeight: '1.6',
-              marginTop: '12px',
+              fontSize: 'clamp(12px, 1.8vh, 14px)',
+              lineHeight: '1.5',
+              marginTop: '6px',
               wordBreak: 'keep-all',
             }}
           >
@@ -178,10 +180,10 @@ export const FirstPage: React.FC<FirstPageProps> = ({ onLoginSuccess }) => {
         </div>
 
         {/* Buttons from top to bottom */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 1.2vh, 12px)', marginTop: '4px' }}>
           <button
             className="btn-full"
-            style={{ background: '#f59e0b', color: '#111827' }}
+            style={{ background: '#f59e0b', color: '#111827', padding: 'clamp(10px, 1.8vh, 14px)' }}
             onClick={() => {
               resetForm();
               setModalMode('login');
@@ -191,7 +193,7 @@ export const FirstPage: React.FC<FirstPageProps> = ({ onLoginSuccess }) => {
           </button>
           <button
             className="btn-full"
-            style={{ background: 'rgba(255, 255, 255, 0.15)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)' }}
+            style={{ background: 'rgba(255, 255, 255, 0.15)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)', padding: 'clamp(10px, 1.8vh, 14px)' }}
             onClick={() => {
               resetForm();
               setModalMode('signup');
@@ -201,7 +203,7 @@ export const FirstPage: React.FC<FirstPageProps> = ({ onLoginSuccess }) => {
           </button>
           <button
             className="btn-full"
-            style={{ background: 'transparent', color: '#94a3b8', border: '1px dashed #475569' }}
+            style={{ background: 'transparent', color: '#94a3b8', border: '1px dashed #475569', padding: 'clamp(8px, 1.5vh, 12px)' }}
             onClick={handleGuestPlay}
             disabled={isLoading}
           >

@@ -77,8 +77,8 @@ export const ResultPage: React.FC<ResultPageProps> = ({
           width: '100%',
           maxHeight: 'calc(100dvh - 16px)',
           padding: 'clamp(10px, 1.8vh, 18px)',
-          gap: 'clamp(6px, 1.2vh, 12px)',
-          overflow: 'hidden',
+          overflowY: 'auto',
+          overflowX: 'hidden',
           display: 'flex',
           flexDirection: 'column',
         }}
