@@ -170,10 +170,12 @@ export const PlayPage: React.FC<PlayPageProps> = ({ user, settings, onFinishGame
     window.addEventListener('pointerup', handleGlobalRelease);
     window.addEventListener('pointercancel', handleGlobalRelease);
     window.addEventListener('blur', handleGlobalRelease);
+    window.addEventListener('orientationchange', handleGlobalRelease);
     return () => {
       window.removeEventListener('pointerup', handleGlobalRelease);
       window.removeEventListener('pointercancel', handleGlobalRelease);
       window.removeEventListener('blur', handleGlobalRelease);
+      window.removeEventListener('orientationchange', handleGlobalRelease);
     };
   }, []);
 

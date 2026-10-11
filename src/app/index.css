@@ -113,18 +113,19 @@ body {
   touch-action: none;
 }
 
-@media (max-width: 768px), (max-height: 520px) {
+@media (max-width: 900px), (max-height: 560px), (orientation: portrait) {
   .game-container-wrapper {
-    padding: 0;
+    padding: 0 !important;
   }
   .aspect-frame {
-    aspect-ratio: auto;
-    width: 100vw;
-    height: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
-    border-radius: 0;
-    border: none;
+    aspect-ratio: auto !important;
+    width: 100% !important;
+    width: 100vw !important;
+    height: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border: none !important;
   }
 }
 
@@ -135,6 +136,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 .canvas-overlay {
@@ -144,6 +146,17 @@ body {
   width: 100%;
   height: 100%;
   pointer-events: none;
+  overflow: hidden;
+}
+
+.canvas-layer canvas,
+.canvas-overlay canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 /* Top Bar HUD */

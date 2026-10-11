@@ -9,6 +9,7 @@ export class PhaserOverlay {
   private scene: Phaser.Scene | null = null;
   private isReady = false;
   private pendingPopups: Array<{ text: string; x: number; y: number; color: string; scale?: number }> = [];
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(config: OverlayConfig) {
     const parent = config.container;
@@ -46,6 +47,46 @@ export class PhaserOverlay {
     };
 
     this.game = new Phaser.Game(phaserConfig);
+
+    if (typeof ResizeObserver !== 'undefined' && parent) {
+      this.resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const cr = entry.contentRect;
+          if (cr.width > 0 && cr.height > 0) {
+            this.resize(cr.width, cr.height);
+          }
+        }
+      });
+      this.resizeObserver.observe(parent);
+    }
+
+    window.addEventListener('resize', this.onWindowResize);
+    window.addEventListener('orientationchange', this.onOrientationChange);
+  }
+
+  private onWindowResize = () => {
+    if (!this.game || !this.game.canvas || !this.game.canvas.parentElement) return;
+    const parent = this.game.canvas.parentElement;
+    const width = parent.clientWidth || window.innerWidth;
+    const height = parent.clientHeight || window.innerHeight;
+    this.resize(width, height);
+  };
+
+  private onOrientationChange = () => {
+    [0, 60, 150, 300, 500].forEach((delay) => {
+      setTimeout(() => {
+        this.onWindowResize();
+      }, delay);
+    });
+  };
+
+  public resize(width: number, height: number) {
+    if (!this.game || !this.game.scale) return;
+    this.game.scale.resize(width, height);
+    if (this.game.canvas) {
+      this.game.canvas.style.width = '100%';
+      this.game.canvas.style.height = '100%';
+    }
   }
 
   public step(dt: number) {
@@ -208,6 +249,12 @@ export class PhaserOverlay {
   }
 
   public destroy() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+    window.removeEventListener('resize', this.onWindowResize);
+    window.removeEventListener('orientationchange', this.onOrientationChange);
     if (this.game) {
       this.game.destroy(true);
       this.game = null;

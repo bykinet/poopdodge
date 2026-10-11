@@ -6,12 +6,15 @@ export interface ThreeSceneConfig {
   showShadowBorder?: boolean;
   characterTextureUrl?: string;
   characterColor?: number;
+  onResize?: (width: number, height: number) => void;
 }
 
 export class ThreeScene {
   public scene: THREE.Scene;
   public camera: THREE.PerspectiveCamera;
   public renderer: THREE.WebGLRenderer;
+  private onResizeCallback?: (width: number, height: number) => void;
+  private resizeObserver: ResizeObserver | null = null;
 
   // 3D Figurine Elements
   private playerGroup: THREE.Group;
@@ -280,15 +283,42 @@ export class ThreeScene {
       this.setCharacterTexture(config.characterTextureUrl, config.characterColor);
     }
 
-    window.addEventListener('resize', this.onResize);
+    this.onResizeCallback = config.onResize;
+
+    // Use ResizeObserver on container to detect orientation changes & layout settlements immediately
+    if (typeof ResizeObserver !== 'undefined' && config.container) {
+      this.resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const cr = entry.contentRect;
+          if (cr.width > 0 && cr.height > 0) {
+            this.updateCameraProjection(cr.width, cr.height);
+          }
+        }
+      });
+      this.resizeObserver.observe(config.container);
+    }
+
+    window.addEventListener('resize', this.onWindowResize);
+    window.addEventListener('orientationchange', this.onOrientationChange);
   }
 
-  private onResize = () => {
+  private onWindowResize = () => {
     if (this.isDestroyed || !this.renderer.domElement.parentElement) return;
     const parent = this.renderer.domElement.parentElement;
-    const width = parent.clientWidth;
-    const height = parent.clientHeight;
+    const width = parent.clientWidth || window.innerWidth;
+    const height = parent.clientHeight || window.innerHeight;
     this.updateCameraProjection(width, height);
+  };
+
+  private onOrientationChange = () => {
+    // Multi-pass check: Android browsers fire orientationchange before reflow completes
+    [0, 60, 150, 300, 500].forEach((delay) => {
+      setTimeout(() => {
+        if (!this.isDestroyed) {
+          this.onWindowResize();
+        }
+      }, delay);
+    });
   };
 
   public updateCameraProjection = (width: number, height: number) => {
@@ -296,27 +326,26 @@ export class ThreeScene {
     const aspect = width / height;
     this.camera.aspect = aspect;
 
-    // The alley extends horizontally from x=0 to x=100 (walls at x=-2, x=102).
-    // We require at least 112 units visible at z=0 so both walls and all poops are safely on-screen.
+    // Required visible alley width at z=0 (x extends from 0 to 100, walls at -1.5 and 101.5)
     const requiredWidth = 112;
 
-    if (aspect >= 1.6) {
+    if (aspect >= 1.45) {
       // Landscape (Desktop 16:9, Ultra-wide mobile 19:9/20:9, etc.)
       // Center camera vertically at y=25 between King Butt (y=52) and Player (y=0) so both are 100% visible
       this.camera.fov = 48;
       this.camera.position.set(50, 28, 72);
       this.camera.lookAt(50, 25, 0);
     } else {
-      // Responsive for Tablets & Mobile Portrait (aspect < 1.6)
+      // Responsive for Tablets & Mobile Portrait (aspect < 1.45)
       // Smoothly scale FOV between 48 and 58 deg to eliminate distortion
-      const targetFOV = Math.min(58, Math.max(48, 48 + (1.6 - aspect) * 10));
+      const targetFOV = Math.min(58, Math.max(48, 48 + (1.45 - aspect) * 10));
       const tanHalfVFOV = Math.tan(THREE.MathUtils.degToRad(targetFOV / 2));
       const tanHalfHFOV = tanHalfVFOV * aspect;
 
       // Calculate target Z distance needed to see requiredWidth
       const targetDistZ = (requiredWidth / 2) / tanHalfHFOV;
 
-      const targetElevY = 24 + targetDistZ * 0.18;
+      const targetElevY = 25 + targetDistZ * 0.10;
 
       this.camera.fov = targetFOV;
       this.camera.position.set(50, targetElevY, targetDistZ);
@@ -324,7 +353,8 @@ export class ThreeScene {
     }
 
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height, false);
+    this.renderer.setSize(width, height, true);
+    this.onResizeCallback?.(width, height);
   };
 
   public projectWorldToScreen(worldX: number, worldY: number, worldZ: number = 0): { x: number; y: number } {
@@ -965,7 +995,12 @@ export class ThreeScene {
 
   public destroy() {
     this.isDestroyed = true;
-    window.removeEventListener('resize', this.onResize);
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+    window.removeEventListener('resize', this.onWindowResize);
+    window.removeEventListener('orientationchange', this.onOrientationChange);
     this.renderer.dispose();
     if (this.renderer.domElement.parentElement) {
       this.renderer.domElement.parentElement.removeChild(this.renderer.domElement);

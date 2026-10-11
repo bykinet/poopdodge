@@ -55,23 +55,32 @@ export class GameManager {
       onItemCaught: this.handleItemCaught,
     });
 
-    // Three.js Scene with exact character texture and color
-    this.threeScene = new ThreeScene({
-      container: config.container3D,
-      showShadowBorder: config.showShadowBorder,
-      characterTextureUrl: config.characterTextureUrl,
-      characterColor: config.characterColor,
-    });
-
     // Phaser 3 Overlay
     this.overlay = new PhaserOverlay({
       container: config.containerOverlay,
     });
 
+    // Three.js Scene with exact character texture and color, synchronized with overlay
+    this.threeScene = new ThreeScene({
+      container: config.container3D,
+      showShadowBorder: config.showShadowBorder,
+      characterTextureUrl: config.characterTextureUrl,
+      characterColor: config.characterColor,
+      onResize: (w, h) => {
+        this.overlay.resize(w, h);
+      },
+    });
+
     // Setup input listeners
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
+    window.addEventListener('orientationchange', this.handleOrientationChange);
   }
+
+  private handleOrientationChange = () => {
+    this.keysPressed.left = false;
+    this.keysPressed.right = false;
+  };
 
   public start() {
     this.isRunning = true;
@@ -265,6 +274,7 @@ export class GameManager {
     soundManager.stopBgm();
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
+    window.removeEventListener('orientationchange', this.handleOrientationChange);
     this.threeScene.destroy();
     this.overlay.destroy();
   }

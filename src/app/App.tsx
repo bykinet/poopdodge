@@ -68,7 +68,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ width: '100vw', height: '100dvh', position: 'relative', overflow: 'hidden' }}>
       {/* Upper Right Navigation (Except on FirstPage) */}
       <div className="app-nav">
         <button type="button" className="lang-btn" onClick={toggleLanguage}>
