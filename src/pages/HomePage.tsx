@@ -62,51 +62,53 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
     <div
       style={{
         width: '100%',
-        height: '100%',
+        height: '100dvh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '20px',
-        overflowY: 'auto',
+        padding: 'clamp(6px, 1.5vh, 16px)',
+        overflow: 'hidden',
         background: 'linear-gradient(180deg, #181935 0%, #0d0d1e 100%)',
       }}
     >
       <div
         className="glass-panel"
         style={{
-          maxWidth: '640px',
+          maxWidth: '560px',
           width: '100%',
-          gap: '20px',
+          padding: 'clamp(10px, 1.8vh, 18px)',
+          gap: 'clamp(6px, 1.1vh, 12px)',
+          overflow: 'hidden',
         }}
       >
         <div style={{ textAlign: 'center' }}>
-          <span style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>
+          <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>
             {t('alleyScene')}
           </span>
-          <h2 style={{ fontSize: '26px', fontWeight: 800, marginTop: '4px' }}>
+          <h2 style={{ fontSize: 'clamp(18px, 2.6vh, 23px)', fontWeight: 800, marginTop: '2px', lineHeight: 1.2 }}>
             {t('gameTitle')}
           </h2>
         </div>
 
         {/* Duration Select */}
         <div>
-          <label style={{ fontSize: '14px', fontWeight: 600, color: '#e2e8f0', display: 'block', marginBottom: '8px' }}>
+          <label style={{ fontSize: 'clamp(11px, 1.4vh, 13px)', fontWeight: 600, color: '#e2e8f0', display: 'block', marginBottom: '4px' }}>
             ⏱️ {t('time')} (sec)
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px' }}>
             {([30, 60, 90, 120, 150, 180] as DurationOption[]).map((sec) => (
               <button
                 key={sec}
                 type="button"
                 style={{
-                  padding: '10px 4px',
-                  borderRadius: '10px',
+                  padding: 'clamp(4px, 0.8vh, 8px) 2px',
+                  borderRadius: '8px',
                   border: duration === sec ? '2px solid #f59e0b' : '1px solid var(--border-glass)',
                   background: duration === sec ? 'rgba(245, 158, 11, 0.25)' : 'rgba(0,0,0,0.3)',
                   color: duration === sec ? '#f59e0b' : '#ffffff',
                   fontWeight: 700,
-                  fontSize: '14px',
+                  fontSize: 'clamp(11px, 1.4vh, 13px)',
                   cursor: 'pointer',
                 }}
                 onClick={() => setDuration(sec)}
@@ -119,33 +121,33 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
 
         {/* Difficulty Select */}
         <div>
-          <label style={{ fontSize: '14px', fontWeight: 600, color: '#e2e8f0', display: 'block', marginBottom: '8px' }}>
+          <label style={{ fontSize: 'clamp(11px, 1.4vh, 13px)', fontWeight: 600, color: '#e2e8f0', display: 'block', marginBottom: '4px' }}>
             ⚡ {t('difficulty')}
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
             {([1, 2, 3] as DifficultyLevel[]).map((d) => (
               <button
                 key={d}
                 type="button"
                 style={{
-                  padding: '12px 8px',
-                  borderRadius: '12px',
+                  padding: 'clamp(5px, 0.9vh, 8px) 4px',
+                  borderRadius: '10px',
                   border: difficulty === d ? '2px solid #f59e0b' : '1px solid var(--border-glass)',
                   background: difficulty === d ? 'rgba(245, 158, 11, 0.25)' : 'rgba(0,0,0,0.3)',
                   color: '#ffffff',
                   cursor: 'pointer',
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px',
                   alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
                 }}
                 onClick={() => setDifficulty(d)}
               >
-                <span style={{ fontSize: '16px', fontWeight: 800, color: difficulty === d ? '#f59e0b' : '#ffffff' }}>
+                <span style={{ fontSize: 'clamp(12px, 1.6vh, 14px)', fontWeight: 800, color: difficulty === d ? '#f59e0b' : '#ffffff' }}>
                   LV {d}
                 </span>
-                <span style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', wordBreak: 'keep-all' }}>
-                  {d === 1 ? t('diff1Desc') : d === 2 ? t('diff2Desc') : t('diff3Desc')}
+                <span style={{ fontSize: '10px', color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                  {d === 1 ? 'Easy' : d === 2 ? 'Normal' : 'Hard'}
                 </span>
               </button>
             ))}
@@ -154,23 +156,24 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
 
         {/* Lives Select */}
         <div>
-          <label style={{ fontSize: '14px', fontWeight: 600, color: '#e2e8f0', display: 'block', marginBottom: '8px' }}>
+          <label style={{ fontSize: 'clamp(11px, 1.4vh, 13px)', fontWeight: 600, color: '#e2e8f0', display: 'block', marginBottom: '4px' }}>
             ❤️ {t('lives')} (Life Risk multiplier)
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
             {([1, 2, 3, 4, 5] as LivesOption[]).map((l) => (
               <button
                 key={l}
                 type="button"
                 style={{
-                  padding: '10px 4px',
-                  borderRadius: '10px',
+                  padding: 'clamp(4px, 0.8vh, 8px) 2px',
+                  borderRadius: '8px',
                   border: lives === l ? '2px solid #ef4444' : '1px solid var(--border-glass)',
                   background: lives === l ? 'rgba(239, 68, 68, 0.25)' : 'rgba(0,0,0,0.3)',
                   color: lives === l ? '#ef4444' : '#ffffff',
                   fontWeight: 700,
-                  fontSize: '15px',
+                  fontSize: 'clamp(11px, 1.4vh, 13px)',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
                 onClick={() => setLives(l)}
               >
@@ -180,35 +183,34 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
           </div>
         </div>
 
-        {/* Character Select (8 choices) */}
         {/* Character Select (8 choices) - 3D Figurine Showcase */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <label style={{ fontSize: '14px', fontWeight: 600, color: '#e2e8f0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <label style={{ fontSize: 'clamp(11px, 1.4vh, 13px)', fontWeight: 600, color: '#e2e8f0' }}>
               👤 {t('character')} (1 of 8)
             </label>
-            <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 700, background: 'rgba(245, 158, 11, 0.15)', padding: '2px 8px', borderRadius: '10px' }}>
+            <span style={{ fontSize: '10px', color: '#f59e0b', fontWeight: 700, background: 'rgba(245, 158, 11, 0.15)', padding: '1px 6px', borderRadius: '8px' }}>
               ✨ 3D Figurine
             </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px' }}>
             {characters.map((char) => (
               <button
                 key={char.id}
                 type="button"
                 style={{
-                  padding: '10px 4px 8px 4px',
-                  borderRadius: '14px',
+                  padding: 'clamp(3px, 0.6vh, 6px) 2px',
+                  borderRadius: '10px',
                   border: characterSlot === char.id ? '2px solid #f59e0b' : '1px solid var(--border-glass)',
-                  background: characterSlot === char.id ? 'rgba(245, 158, 11, 0.22)' : 'rgba(0,0,0,0.3)',
+                  background: characterSlot === char.id ? 'rgba(245, 158, 11, 0.25)' : 'rgba(0,0,0,0.25)',
                   color: '#ffffff',
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '5px',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  transform: characterSlot === char.id ? 'translateY(-2px)' : 'none',
+                  gap: '3px',
+                  transition: 'all 0.15s ease',
+                  transform: characterSlot === char.id ? 'scale(1.03)' : 'none',
                 }}
                 onClick={() => {
                   setCharacterSlot(char.id);
@@ -220,9 +222,9 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
                 {/* 3D Figurine Display Showcase */}
                 <div
                   style={{
-                    width: '60px',
-                    height: '62px',
-                    borderRadius: '14px',
+                    width: 'clamp(38px, 5vh, 46px)',
+                    height: 'clamp(38px, 5vh, 46px)',
+                    borderRadius: '10px',
                     background: `radial-gradient(circle at 50% 30%, ${char.colorHex}44 0%, #111425 85%)`,
                     border: '1px solid rgba(255, 255, 255, 0.12)',
                     display: 'flex',
@@ -231,7 +233,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
                     justifyContent: 'center',
                     position: 'relative',
                     overflow: 'hidden',
-                    boxShadow: characterSlot === char.id ? `0 0 14px ${char.colorHex}99` : '0 4px 8px rgba(0,0,0,0.4)',
+                    boxShadow: characterSlot === char.id ? `0 0 10px ${char.colorHex}99` : '0 2px 5px rgba(0,0,0,0.4)',
                   }}
                 >
                   {char.avatarUrl ? (
@@ -242,7 +244,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
                         width: '85%',
                         height: '85%',
                         objectFit: 'contain',
-                        filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))',
+                        filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.5))',
                       }}
                     />
                   ) : char.category === 'animal' ? (
@@ -254,9 +256,9 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
                   <div
                     style={{
                       position: 'absolute',
-                      bottom: '2px',
+                      bottom: '1px',
                       width: '64%',
-                      height: '5px',
+                      height: '4px',
                       borderRadius: '50%',
                       background: 'radial-gradient(ellipse, #f59e0b 0%, rgba(245, 158, 11, 0.2) 70%, transparent 100%)',
                     }}
@@ -264,12 +266,13 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
                 </div>
                 <span
                   style={{
-                    fontSize: '12px',
+                    fontSize: '10px',
                     fontWeight: 700,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    maxWidth: '68px',
+                    maxWidth: '56px',
+                    lineHeight: 1.1,
                   }}
                 >
                   {char.name}
@@ -283,7 +286,13 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
         <button
           type="button"
           className="btn-primary-large"
-          style={{ width: '100%', marginTop: '8px' }}
+          style={{
+            width: '100%',
+            marginTop: '2px',
+            padding: 'clamp(9px, 1.4vh, 13px)',
+            fontSize: 'clamp(14px, 2vh, 17px)',
+            borderRadius: '20px',
+          }}
           onClick={handleStart}
         >
           {t('startGame')}

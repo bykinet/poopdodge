@@ -32,6 +32,9 @@ async function uploadAll() {
     { local: 'public/game-assets/characters/leo.png', remote: 'game-assets/characters/leo.png' },
     { local: 'public/game-assets/characters/hana.png', remote: 'game-assets/characters/hana.png' },
     { local: 'public/game-assets/characters/dori.png', remote: 'game-assets/characters/dori.png' },
+    { local: 'public/game-assets/characters/momo.png', remote: 'game-assets/characters/momo.png' },
+    { local: 'public/game-assets/characters/kiki.png', remote: 'game-assets/characters/kiki.png' },
+    { local: 'public/game-assets/characters/pomi.png', remote: 'game-assets/characters/pomi.png' },
     { local: 'public/game-assets/items/poop.png', remote: 'game-assets/items/poop.png' },
     { local: 'public/game-assets/items/toilet_paper.png', remote: 'game-assets/items/toilet_paper.png' },
   ];
