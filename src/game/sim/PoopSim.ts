@@ -243,7 +243,9 @@ export class PoopSim {
   }
 
   private spawnCollectibleItem() {
-    const spawnX = 14 + Math.random() * (86 - 14);
+    const minItemX = PLAYER_MIN_X + 2;
+    const maxItemX = PLAYER_MAX_X - 2;
+    const spawnX = minItemX + Math.random() * (maxItemX - minItemX);
     const fallDuration = 1.8 + Math.random() * 0.7; // 1.8s to 2.5s
     this.state.items.push({
       id: this.nextItemId++,
@@ -268,13 +270,19 @@ export class PoopSim {
           isAimed = true;
         }
       }
+    } else if (!isLarge && (this.state.playerX <= 12 || this.state.playerX >= 88)) {
+      // Prevent edge camping: If player is staying at the left or right edge, 30% of drops directly target player
+      if (Math.random() < 0.3) {
+        isAimed = true;
+      }
     }
 
     let spawnX: number;
     if (isAimed) {
       spawnX = this.state.playerX;
     } else {
-      spawnX = 12 + Math.random() * (88 - 12);
+      // Full playfield coverage matching the entire player movement range (PLAYER_MIN_X ~ PLAYER_MAX_X)
+      spawnX = PLAYER_MIN_X + Math.random() * (PLAYER_MAX_X - PLAYER_MIN_X);
     }
 
     const type: PoopType = isLarge ? 'large' : 'normal';
@@ -297,8 +305,8 @@ export class PoopSim {
     if (!this.state.isClimax) return 50;
     const local = this.state.elapsed % CLIMAX_CYCLE_PERIOD;
     const progress = Math.max(0, local - CLIMAX_START_LOCAL);
-    // King Butt slowly sways smoothly between x = 24 and 76
-    return 50 + Math.sin(progress * 1.5) * 26;
+    // King Butt sways smoothly across the arena between x = 16 and 84
+    return 50 + Math.sin(progress * 1.5) * 34;
   }
 
   private spawnGiantPoop() {
