@@ -202,25 +202,31 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
               >
                 <div
                   style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
+                    width: '52px',
+                    height: '52px',
+                    borderRadius: '12px',
                     background: char.colorHex,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '16px',
+                    fontSize: '24px',
+                    overflow: 'hidden',
+                    boxShadow: characterSlot === char.id ? '0 0 12px rgba(245, 158, 11, 0.6)' : 'none',
                   }}
                 >
                   {char.avatarUrl ? (
-                    <img src={char.avatarUrl} alt="" style={{ width: '100%', height: '100%', borderRadius: '8px' }} />
+                    <img
+                      src={char.avatarUrl}
+                      alt={char.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
                   ) : char.category === 'animal' ? (
                     '🐾'
                   ) : (
                     '🏃'
                   )}
                 </div>
-                <span style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {char.name}
                 </span>
               </button>

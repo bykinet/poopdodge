@@ -109,6 +109,57 @@ export class PhaserOverlay {
     this.renderFloatingText(`🚨 ${text} 🚨`, pixelX, pixelY, '#ff2d55', 1.8, 2500);
   }
 
+  public showItemCatch(scoreGained: number, isDouble: boolean, streak: number, worldX: number) {
+    if (!this.game || !this.scene || !this.isReady) return;
+    const canvasWidth = this.game.canvas.width;
+    const canvasHeight = this.game.canvas.height;
+    const pixelX = (worldX / 100) * canvasWidth;
+    const pixelY = canvasHeight * 0.70;
+
+    if (isDouble) {
+      // "참 잘했어요" message with 2x score and fireworks explosion!
+      this.renderFloatingText(
+        `🎉 참 잘했어요! 점수 2배! +${scoreGained} 🎉`,
+        pixelX,
+        pixelY - 20,
+        '#fef08a',
+        1.5,
+        2200
+      );
+      this.triggerFireworks(pixelX, pixelY - 30);
+    } else {
+      this.renderFloatingText(`🧻 +${scoreGained} (${streak})`, pixelX, pixelY, '#38bdf8', 1.1, 1000);
+    }
+  }
+
+  private triggerFireworks(x: number, y: number) {
+    if (!this.scene) return;
+    const colors = [0xff3b30, 0xffcc00, 0x34c759, 0x007aff, 0xaf52de, 0xff2d55];
+    const particleCount = 24;
+
+    for (let i = 0; i < particleCount; i++) {
+      const color = colors[i % colors.length];
+      const particle = this.scene.add.circle(x, y, 4 + Math.random() * 3, color);
+      const angle = (i / particleCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+      const speed = 60 + Math.random() * 90;
+      const targetX = x + Math.cos(angle) * speed;
+      const targetY = y + Math.sin(angle) * speed - 20;
+
+      this.scene.tweens.add({
+        targets: particle,
+        x: targetX,
+        y: targetY,
+        alpha: 0,
+        scale: 0.2,
+        duration: 800 + Math.random() * 400,
+        ease: 'Cubic.easeOut',
+        onComplete: () => {
+          particle.destroy();
+        },
+      });
+    }
+  }
+
   private renderFloatingText(
     text: string,
     x: number,

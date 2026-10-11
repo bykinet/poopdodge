@@ -262,4 +262,55 @@ describe('PoopSim Unit Tests', () => {
       }
     }
   });
+
+  it('awards bonus score on item catch and doubles score when consecutive streak reaches 5', () => {
+    let caughtEvents: any[] = [];
+    const sim = new PoopSim(
+      {
+        duration: 60,
+        difficulty: 1,
+        lives: 3,
+        characterSlot: 0,
+      },
+      {
+        onItemCaught: (e) => {
+          caughtEvents.push(e);
+        },
+      }
+    );
+
+    sim.state.playerX = 50;
+
+    // Simulate catching 4 items
+    for (let i = 1; i <= 4; i++) {
+      sim.state.items.push({
+        id: 100 + i,
+        x: 50,
+        type: 'toilet_paper',
+        radius: 2.0,
+        fallDuration: 1.0,
+        elapsedTime: 0.9,
+        height: 0.1, // in catch zone
+      });
+      sim.step(0.01);
+      expect(sim.state.itemStreak).toBe(i);
+      expect(caughtEvents[caughtEvents.length - 1].isDouble).toBe(false);
+    }
+
+    // Catch 5th item -> trigger 2x double bonus
+    sim.state.items.push({
+      id: 105,
+      x: 50,
+      type: 'toilet_paper',
+      radius: 2.0,
+      fallDuration: 1.0,
+      elapsedTime: 0.9,
+      height: 0.1,
+    });
+    sim.step(0.01);
+    expect(sim.state.itemStreak).toBe(5);
+    const lastEvent = caughtEvents[caughtEvents.length - 1];
+    expect(lastEvent.isDouble).toBe(true);
+    expect(lastEvent.scoreGained).toBe(caughtEvents[0].scoreGained * 2);
+  });
 });

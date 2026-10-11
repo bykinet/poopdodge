@@ -1,8 +1,10 @@
 import { DifficultyLevel, LivesOption } from './types';
 
+export const SCALE_FACTOR = 2 / 3; // 2/3 overall size scaling
+
 export const WORLD_MIN_X = 0;
 export const WORLD_MAX_X = 100;
-export const PLAYER_HALF_WIDTH = 4;
+export const PLAYER_HALF_WIDTH = 4 * SCALE_FACTOR; // ~2.67
 export const PLAYER_MIN_X = 6;
 export const PLAYER_MAX_X = 94;
 export const PLAYER_SPEED = 55;
@@ -10,10 +12,12 @@ export const PLAYER_SPEED = 55;
 export const INVINCIBLE_DURATION = 0.8; // 800ms
 
 export const POOP_RADIUS = {
-  normal: 3.5,
-  large: 6.0,
-  giant: 12.0,
+  normal: 3.5 * SCALE_FACTOR, // ~2.33
+  large: 6.0 * SCALE_FACTOR,  // 4.0
+  giant: 12.0 * SCALE_FACTOR, // 8.0
 } as const;
+
+export const ITEM_RADIUS = 3.0 * SCALE_FACTOR; // ~2.0
 
 export const CLIMAX_CYCLE_PERIOD = 30.0;
 export const CLIMAX_START_LOCAL = 23.0;
@@ -63,6 +67,18 @@ export function calculateCloseScore(
   const mult = getComboMultiplier(streak);
   const base = isGiant ? 40 : 15;
   return Math.floor(base * diffScore * risk * mult);
+}
+
+export function calculateItemCatchScore(
+  difficulty: DifficultyLevel,
+  livesStart: LivesOption,
+  isDoubleBonus: boolean
+): number {
+  const diffScore = DIFFICULTY_SCORE[difficulty];
+  const risk = LIFE_RISK[livesStart];
+  const base = 25;
+  const score = Math.floor(base * diffScore * risk);
+  return isDoubleBonus ? score * 2 : score;
 }
 
 export function calculateSuccessBonus(

@@ -6,6 +6,7 @@ import { GameSettings, SimState } from '@/game/sim/types';
 import { soundManager } from '@/features/audio/soundManager';
 import { GameSessionRecord, saveGameSession } from '@/features/session/sessionService';
 import { UserProfile } from '@/features/auth/authService';
+import { getEffectiveCharacters } from '@/entities/character/characterModel';
 
 interface PlayPageProps {
   user: UserProfile;
@@ -38,10 +39,14 @@ export const PlayPage: React.FC<PlayPageProps> = ({ user, settings, onFinishGame
   useEffect(() => {
     if (!container3DRef.current || !containerOverlayRef.current) return;
 
+    const characters = getEffectiveCharacters(user.customCharacterPaths || []);
+    const selectedChar = characters[settings.characterSlot] || characters[0];
+
     const gm = new GameManager({
       container3D: container3DRef.current,
       containerOverlay: containerOverlayRef.current,
       settings,
+      characterTextureUrl: selectedChar.avatarUrl,
       showShadowBorder: true,
       onStateChange: (st) => {
         setSimState({ ...st });

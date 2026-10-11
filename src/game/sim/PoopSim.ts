@@ -21,9 +21,12 @@ import {
   PLAYER_MAX_X,
   PLAYER_MIN_X,
   PLAYER_SPEED,
+  PLAYER_HALF_WIDTH,
   POOP_RADIUS,
+  ITEM_RADIUS,
   calculateCleanScore,
   calculateCloseScore,
+  calculateItemCatchScore,
   calculateSuccessBonus,
   getComboMultiplier,
 } from './constants';
@@ -33,7 +36,9 @@ export class PoopSim {
   public state: SimState;
   private callbacks: SimEventCallbacks;
   private nextPoopId = 1;
+  private nextItemId = 1;
   private timeUntilNextSpawn = 0;
+  private timeUntilNextItemSpawn = 1.0;
   private firstShadowHintGiven = false;
 
   constructor(settings: GameSettings, callbacks: SimEventCallbacks = {}) {
@@ -60,9 +65,9 @@ export class PoopSim {
       climaxCount: 0,
       firstClimaxShown: false,
       poops: [],
+      items: [],
+      itemStreak: 0,
     };
-
-    // First spawn interval will be scheduled immediately in step()
   }
 
   public setCallbacks(callbacks: SimEventCallbacks) {
@@ -177,6 +182,14 @@ export class PoopSim {
       }
     }
 
+    // Spawn collectible items (Toilet paper) frequently between poops
+    this.timeUntilNextItemSpawn -= dt;
+    if (this.timeUntilNextItemSpawn <= 0) {
+      this.spawnCollectibleItem();
+      // Schedule next item frequently (1.4s to 2.2s)
+      this.timeUntilNextItemSpawn = 1.4 + Math.random() * 0.8;
+    }
+
     // Update existing poops and evaluate landings
     for (let i = this.state.poops.length - 1; i >= 0; i--) {
       const poop = this.state.poops[i];
@@ -189,6 +202,58 @@ export class PoopSim {
         if (this.state.outcome !== 'in_progress') break;
       }
     }
+
+    // Update collectible items and check player catch collision
+    for (let i = this.state.items.length - 1; i >= 0; i--) {
+      const item = this.state.items[i];
+      item.elapsedTime += dt;
+      item.height = Math.max(0, 1.0 - item.elapsedTime / item.fallDuration);
+
+      // Check collision when item is within catch range (height <= 0.25)
+      const gap = Math.abs(this.state.playerX - item.x);
+      const catchRadius = PLAYER_HALF_WIDTH + item.radius + 3.0;
+
+      if (item.height <= 0.25 && gap <= catchRadius) {
+        // Caught!
+        this.state.itemStreak += 1;
+        const isDouble = this.state.itemStreak >= 5;
+        const scoreGained = calculateItemCatchScore(
+          this.state.settings.difficulty,
+          this.state.settings.lives,
+          isDouble
+        );
+        this.state.score = Math.min(MAX_SESSION_SCORE, this.state.score + scoreGained);
+        this.callbacks.onItemCaught?.({
+          itemStreak: this.state.itemStreak,
+          scoreGained,
+          isDouble,
+          x: item.x,
+        });
+        this.state.items.splice(i, 1);
+        continue;
+      }
+
+      // If missed and reached ground
+      if (item.height <= 0) {
+        this.state.itemStreak = 0; // reset consecutive streak
+        this.callbacks.onItemMissed?.();
+        this.state.items.splice(i, 1);
+      }
+    }
+  }
+
+  private spawnCollectibleItem() {
+    const spawnX = 14 + Math.random() * (86 - 14);
+    const fallDuration = 1.8 + Math.random() * 0.7; // 1.8s to 2.5s
+    this.state.items.push({
+      id: this.nextItemId++,
+      x: spawnX,
+      type: 'toilet_paper',
+      radius: ITEM_RADIUS,
+      fallDuration,
+      elapsedTime: 0,
+      height: 1.0,
+    });
   }
 
   private spawnBasePoop() {

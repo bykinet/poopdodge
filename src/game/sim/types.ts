@@ -38,6 +38,16 @@ export interface GameSettings {
 
 export type GameOutcome = 'in_progress' | 'success' | 'failure';
 
+export interface CollectibleItem {
+  id: number;
+  x: number;
+  type: 'toilet_paper';
+  radius: number;
+  fallDuration: number;
+  elapsedTime: number;
+  height: number;
+}
+
 export interface SimState {
   settings: GameSettings;
   elapsed: number;
@@ -60,6 +70,8 @@ export interface SimState {
   climaxCount: number;
   firstClimaxShown: boolean;
   poops: Poop[];
+  items: CollectibleItem[];
+  itemStreak: number;
 }
 
 export interface SimEventCallbacks {
@@ -69,4 +81,6 @@ export interface SimEventCallbacks {
   onGameOver?: (outcome: 'success' | 'failure', finalScore: number) => void;
   onFirstClimaxWarning?: () => void;
   onFirstShadowHint?: () => void;
+  onItemCaught?: (event: { itemStreak: number; scoreGained: number; isDouble: boolean; x: number }) => void;
+  onItemMissed?: () => void;
 }

@@ -8,6 +8,7 @@ export interface GameManagerConfig {
   container3D: HTMLElement;
   containerOverlay: HTMLElement;
   settings: GameSettings;
+  characterTextureUrl?: string;
   showShadowBorder?: boolean;
   onStateChange?: (state: SimState) => void;
   onEndingStart?: (outcome: 'success' | 'failure') => void;
@@ -50,6 +51,7 @@ export class GameManager {
       onGameOver: this.handleGameOver,
       onFirstClimaxWarning: this.handleFirstClimaxWarning,
       onFirstShadowHint: this.handleFirstShadowHint,
+      onItemCaught: this.handleItemCaught,
     });
 
     // Three.js Scene
@@ -57,6 +59,10 @@ export class GameManager {
       container: config.container3D,
       showShadowBorder: config.showShadowBorder,
     });
+
+    if (config.characterTextureUrl) {
+      this.threeScene.setCharacterTexture(config.characterTextureUrl);
+    }
 
     // Phaser 3 Overlay
     this.overlay = new PhaserOverlay({
@@ -138,6 +144,7 @@ export class GameManager {
         this.sim.state.playerX,
         this.sim.state.invincibleTimer,
         this.sim.state.poops,
+        this.sim.state.items,
         this.sim.state.isClimax,
         dt
       );
@@ -152,6 +159,7 @@ export class GameManager {
         this.sim.state.playerX,
         0,
         [], // No more poops falling in ending
+        [], // No items in ending
         false,
         dt
       );
@@ -162,7 +170,7 @@ export class GameManager {
       }
     } else if (this.endingPhase === 'still') {
       // Static still frame: just keep rendering still
-      this.threeScene.update(this.sim.state.playerX, 0, [], false, dt);
+      this.threeScene.update(this.sim.state.playerX, 0, [], [], false, dt);
     }
 
     this.animFrameId = requestAnimationFrame(this.loop);
@@ -201,6 +209,15 @@ export class GameManager {
 
   private handleFirstShadowHint = () => {
     this.overlay.showShadowHint(50, 'DROPS HERE');
+  };
+
+  private handleItemCaught = (event: { itemStreak: number; scoreGained: number; isDouble: boolean; x: number }) => {
+    if (event.isDouble) {
+      soundManager.playCheer();
+    } else {
+      soundManager.playClean();
+    }
+    this.overlay.showItemCatch(event.scoreGained, event.isDouble, event.itemStreak, event.x);
   };
 
   private handleGameOver = (outcome: 'success' | 'failure', _finalScore: number) => {
