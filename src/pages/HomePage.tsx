@@ -46,6 +46,10 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
       setShowNicknameModal(true);
       return;
     }
+    const updatedUser = { ...user, selectedCharacterSlot: characterSlot };
+    onUpdateUser(updatedUser);
+    localStorage.setItem('poopdodge_mock_user', JSON.stringify(updatedUser));
+
     onStartGame({
       duration,
       difficulty,
@@ -206,7 +210,12 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                   transform: characterSlot === char.id ? 'translateY(-2px)' : 'none',
                 }}
-                onClick={() => setCharacterSlot(char.id)}
+                onClick={() => {
+                  setCharacterSlot(char.id);
+                  const updatedUser = { ...user, selectedCharacterSlot: char.id };
+                  onUpdateUser(updatedUser);
+                  localStorage.setItem('poopdodge_mock_user', JSON.stringify(updatedUser));
+                }}
               >
                 {/* 3D Figurine Display Showcase */}
                 <div

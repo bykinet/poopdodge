@@ -47,6 +47,7 @@ export const PlayPage: React.FC<PlayPageProps> = ({ user, settings, onFinishGame
       containerOverlay: containerOverlayRef.current,
       settings,
       characterTextureUrl: selectedChar.avatarUrl,
+      characterColor: selectedChar.color,
       showShadowBorder: true,
       onStateChange: (st) => {
         setSimState({ ...st });

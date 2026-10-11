@@ -10,6 +10,7 @@ interface ResultPageProps {
   session: GameSessionRecord;
   onPlayAgain: () => void;
   onLinkAccount: () => void;
+  onGoHome?: () => void;
 }
 
 export const ResultPage: React.FC<ResultPageProps> = ({
@@ -17,6 +18,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
   session,
   onPlayAgain,
   onLinkAccount,
+  onGoHome,
 }) => {
   const { t } = useTranslation();
   const [rankings, setRankings] = useState<GameSessionRecord[]>([]);
@@ -189,6 +191,17 @@ export const ResultPage: React.FC<ResultPageProps> = ({
           >
             {t('playAgain')}
           </button>
+
+          {onGoHome && (
+            <button
+              type="button"
+              className="btn-full"
+              style={{ background: 'rgba(245, 158, 11, 0.25)', border: '1px solid #f59e0b', color: '#f59e0b', fontWeight: 700 }}
+              onClick={onGoHome}
+            >
+              🏠 {t('mainMenu', 'Main Menu (Change Character)')}
+            </button>
+          )}
 
           {user.provider === 'guest' && (
             <button

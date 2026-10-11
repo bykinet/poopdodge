@@ -9,6 +9,7 @@ export interface GameManagerConfig {
   containerOverlay: HTMLElement;
   settings: GameSettings;
   characterTextureUrl?: string;
+  characterColor?: number;
   showShadowBorder?: boolean;
   onStateChange?: (state: SimState) => void;
   onEndingStart?: (outcome: 'success' | 'failure') => void;
@@ -54,15 +55,13 @@ export class GameManager {
       onItemCaught: this.handleItemCaught,
     });
 
-    // Three.js Scene
+    // Three.js Scene with exact character texture and color
     this.threeScene = new ThreeScene({
       container: config.container3D,
       showShadowBorder: config.showShadowBorder,
+      characterTextureUrl: config.characterTextureUrl,
+      characterColor: config.characterColor,
     });
-
-    if (config.characterTextureUrl) {
-      this.threeScene.setCharacterTexture(config.characterTextureUrl);
-    }
 
     // Phaser 3 Overlay
     this.overlay = new PhaserOverlay({

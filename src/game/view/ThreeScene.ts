@@ -4,6 +4,8 @@ import { Poop, CollectibleItem } from '../sim/types';
 export interface ThreeSceneConfig {
   container: HTMLElement;
   showShadowBorder?: boolean;
+  characterTextureUrl?: string;
+  characterColor?: number;
 }
 
 export class ThreeScene {
@@ -135,7 +137,7 @@ export class ThreeScene {
     });
 
     this.figurineAccentMat = new THREE.MeshStandardMaterial({
-      color: 0x3b82f6, // Character costume accent
+      color: config.characterColor !== undefined ? config.characterColor : 0x3b82f6, // Character costume accent
       roughness: 0.28,
       metalness: 0.1,
     });
@@ -271,6 +273,10 @@ export class ThreeScene {
     this.playerShadowMesh.position.set(50, 0.03, 0);
     this.scene.add(this.playerShadowMesh);
 
+    if (config.characterTextureUrl) {
+      this.setCharacterTexture(config.characterTextureUrl, config.characterColor);
+    }
+
     window.addEventListener('resize', this.onResize);
   }
 
@@ -396,21 +402,44 @@ export class ThreeScene {
     return { group, anusRing, anusHole, leftCheek, rightCheek };
   }
 
-  public setCharacterTexture(textureUrl: string) {
+  public setCharacterTexture(textureUrl: string, characterColor?: number) {
+    if (characterColor !== undefined && this.figurineAccentMat) {
+      this.figurineAccentMat.color.setHex(characterColor);
+      this.figurineAccentMat.needsUpdate = true;
+    }
+
     const loader = new THREE.TextureLoader();
     loader.load(
       textureUrl,
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
-        this.playerMaterial.map = tex;
-        this.playerMaterial.color.setHex(0xffffff);
-        this.playerMaterial.transparent = true;
-        this.playerMaterial.alphaTest = 0.1;
-        this.playerMaterial.needsUpdate = true;
+        tex.needsUpdate = true;
+
+        if (this.playerMaterial) {
+          this.playerMaterial.dispose();
+        }
+
+        const newMat = new THREE.MeshStandardMaterial({
+          map: tex,
+          color: 0xffffff,
+          side: THREE.DoubleSide,
+          transparent: true,
+          alphaTest: 0.1,
+          roughness: 0.28,
+          metalness: 0.05,
+        });
+        newMat.needsUpdate = true;
+
+        this.playerMaterial = newMat;
+        this.playerFrontMesh.material = newMat;
+        this.playerBackMesh.material = newMat;
       },
       undefined,
-      () => {
-        this.playerMaterial.color.setHex(0x3b82f6);
+      (err) => {
+        console.warn('Failed to load character texture:', textureUrl, err);
+        if (characterColor !== undefined) {
+          this.setPlayerColor(characterColor);
+        }
       }
     );
   }
@@ -447,12 +476,14 @@ export class ThreeScene {
     this.lastPlayerX = playerX;
     const vx = dx / Math.max(dt, 0.001);
 
-    // Body Yaw rotation: turn 3D figurine facing movement direction!
+    // 45 degrees body yaw rotation:
+    // 오른쪽으로 갈 때는 전면에서 오른쪽 45도 (+Math.PI / 4), 왼쪽으로 갈 때는 전면에서 왼쪽 45도 (-Math.PI / 4)
+    const ANGLE_45_DEG = Math.PI / 4; // Exactly 45 degrees
     let targetYaw = 0;
-    if (vx > 2.0) {
-      targetYaw = 1.35; // Turn right (~78 deg)
-    } else if (vx < -2.0) {
-      targetYaw = -1.35; // Turn left (~-78 deg)
+    if (vx > 1.5) {
+      targetYaw = ANGLE_45_DEG; // Turn right 45 degrees from front (+45°)
+    } else if (vx < -1.5) {
+      targetYaw = -ANGLE_45_DEG; // Turn left 45 degrees from front (-45°)
     }
 
     // Smooth yaw turn interpolation

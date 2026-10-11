@@ -108,6 +108,7 @@ export const App: React.FC = () => {
           session={lastSession}
           onPlayAgain={handlePlayAgain}
           onLinkAccount={() => setCurrentPage('mypage')}
+          onGoHome={() => setCurrentPage('home')}
         />
       )}
 
