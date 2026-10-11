@@ -7,7 +7,7 @@ export const WORLD_MAX_X = 100;
 export const PLAYER_HALF_WIDTH = 4 * SCALE_FACTOR; // ~2.67
 export const PLAYER_MIN_X = 6;
 export const PLAYER_MAX_X = 94;
-export const PLAYER_SPEED = 55;
+export const PLAYER_SPEED = 48;
 
 export const INVINCIBLE_DURATION = 0.8; // 800ms
 

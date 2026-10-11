@@ -98,45 +98,84 @@ export const PlayPage: React.FC<PlayPageProps> = ({ user, settings, onFinishGame
     };
   }, [settings, user]);
 
-  // Touch and drag support on viewport
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+  const lastPointerXRef = useRef<number | null>(null);
+
+  // Relative drag on play area (upper 72% only, never interfering with buttons)
+  const handleCanvasPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (endingPhase !== 'none' || !gameManagerRef.current) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const xRatio = (e.clientX - rect.left) / rect.width;
-    const worldX = Math.max(6, Math.min(94, xRatio * 100));
-    gameManagerRef.current.setPointerWorldX(worldX);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.buttons > 0 && endingPhase === 'none' && gameManagerRef.current) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const xRatio = (e.clientX - rect.left) / rect.width;
-      const worldX = Math.max(6, Math.min(94, xRatio * 100));
-      gameManagerRef.current.setPointerWorldX(worldX);
+    const relY = (e.clientY - rect.top) / rect.height;
+    if (relY <= 0.72) {
+      lastPointerXRef.current = e.clientX;
     }
   };
 
-  // Continuous button movement
-  const startContinuousMove = (dir: -1 | 1) => {
-    if (endingPhase !== 'none' || !gameManagerRef.current) return;
-    setActiveBtn(dir === -1 ? 'left' : 'right');
-    gameManagerRef.current.moveContinuous(dir, 0.05);
+  const handleCanvasPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (lastPointerXRef.current === null || !gameManagerRef.current || endingPhase !== 'none') return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const deltaX = e.clientX - lastPointerXRef.current;
+    lastPointerXRef.current = e.clientX;
+    const deltaWorld = (deltaX / rect.width) * 110;
+    const currentX = gameManagerRef.current.sim.state.playerX;
+    gameManagerRef.current.setPointerWorldX(currentX + deltaWorld);
+  };
 
+  const handleCanvasPointerUp = () => {
+    lastPointerXRef.current = null;
+  };
+
+  // Controlled directional movement for both tap and hold
+  const startContinuousMove = (dir: -1 | 1, e?: React.PointerEvent) => {
+    if (endingPhase !== 'none' || !gameManagerRef.current) return;
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      } catch {}
+    }
+    setActiveBtn(dir === -1 ? 'left' : 'right');
+
+    // First: gentle single step for instant responsiveness on discrete tap
+    gameManagerRef.current.moveContinuous(dir, 0.04);
+
+    // Continuous hold: smoothly move at calibrated mobile speed
     if (moveIntervalRef.current) clearInterval(moveIntervalRef.current);
     moveIntervalRef.current = window.setInterval(() => {
       if (gameManagerRef.current && endingPhase === 'none') {
-        gameManagerRef.current.moveContinuous(dir, 0.03);
+        gameManagerRef.current.moveContinuous(dir, 0.025);
       }
-    }, 30);
+    }, 25);
   };
 
-  const stopContinuousMove = () => {
+  const stopContinuousMove = (e?: React.PointerEvent) => {
+    if (e) {
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {}
+    }
     setActiveBtn(null);
     if (moveIntervalRef.current) {
       clearInterval(moveIntervalRef.current);
       moveIntervalRef.current = null;
     }
   };
+
+  // Global safety handlers to ensure movement ALWAYS stops if pointer leaves or window blurs
+  useEffect(() => {
+    const handleGlobalRelease = () => {
+      stopContinuousMove();
+      lastPointerXRef.current = null;
+    };
+    window.addEventListener('pointerup', handleGlobalRelease);
+    window.addEventListener('pointercancel', handleGlobalRelease);
+    window.addEventListener('blur', handleGlobalRelease);
+    return () => {
+      window.removeEventListener('pointerup', handleGlobalRelease);
+      window.removeEventListener('pointercancel', handleGlobalRelease);
+      window.removeEventListener('blur', handleGlobalRelease);
+    };
+  }, []);
 
   const toggleSound = () => {
     const muted = soundManager.toggleMute();
@@ -166,8 +205,10 @@ export const PlayPage: React.FC<PlayPageProps> = ({ user, settings, onFinishGame
     <div className="game-container-wrapper">
       <div
         className="aspect-frame"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
+        onPointerDown={handleCanvasPointerDown}
+        onPointerMove={handleCanvasPointerMove}
+        onPointerUp={handleCanvasPointerUp}
+        onPointerCancel={handleCanvasPointerUp}
       >
         {/* Top Bar HUD (Hidden during ending) */}
         {endingPhase === 'none' && (
@@ -272,12 +313,11 @@ export const PlayPage: React.FC<PlayPageProps> = ({ user, settings, onFinishGame
               type="button"
               className={`ctrl-btn ${activeBtn === 'left' ? 'active' : ''}`}
               aria-label={t('moveLeft')}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                startContinuousMove(-1);
-              }}
-              onPointerUp={stopContinuousMove}
-              onPointerLeave={stopContinuousMove}
+              onPointerDown={(e) => startContinuousMove(-1, e)}
+              onPointerUp={(e) => stopContinuousMove(e)}
+              onPointerCancel={(e) => stopContinuousMove(e)}
+              onLostPointerCapture={(e) => stopContinuousMove(e)}
+              onContextMenu={(e) => e.preventDefault()}
             >
               <span style={{ fontSize: '24px' }}>◀</span>
               <span>{t('moveLeft')}</span>
@@ -287,12 +327,11 @@ export const PlayPage: React.FC<PlayPageProps> = ({ user, settings, onFinishGame
               type="button"
               className={`ctrl-btn ${activeBtn === 'right' ? 'active' : ''}`}
               aria-label={t('moveRight')}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                startContinuousMove(1);
-              }}
-              onPointerUp={stopContinuousMove}
-              onPointerLeave={stopContinuousMove}
+              onPointerDown={(e) => startContinuousMove(1, e)}
+              onPointerUp={(e) => stopContinuousMove(e)}
+              onPointerCancel={(e) => stopContinuousMove(e)}
+              onLostPointerCapture={(e) => stopContinuousMove(e)}
+              onContextMenu={(e) => e.preventDefault()}
             >
               <span style={{ fontSize: '24px' }}>▶</span>
               <span>{t('moveRight')}</span>

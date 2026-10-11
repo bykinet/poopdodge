@@ -96,6 +96,7 @@ body {
   width: 100%;
   height: 100%;
   padding: 8px;
+  overflow: hidden;
 }
 
 .aspect-frame {
@@ -109,13 +110,19 @@ body {
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
   background-color: #0b0b1a;
   border: 2px solid rgba(255, 255, 255, 0.1);
+  touch-action: none;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+  .game-container-wrapper {
+    padding: 0;
+  }
   .aspect-frame {
     aspect-ratio: auto;
+    width: 100vw;
     height: 100%;
-    max-height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
     border-radius: 0;
     border: none;
   }
@@ -189,25 +196,26 @@ body {
   to { transform: scale(1.15); filter: drop-shadow(0 0 8px #ff2d55); }
 }
 
-/* Bottom Move Buttons */
+/* Bottom Move Buttons: Two-Thumb Gamepad Ergonomics */
 .hud-controls-bottom {
   position: absolute;
-  bottom: 24px;
+  bottom: clamp(14px, 3vh, 32px);
   left: 0;
   right: 0;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
+  justify-content: space-between;
+  padding: 0 clamp(16px, 5vw, 40px);
   z-index: 40;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .ctrl-btn {
+  pointer-events: auto;
+  touch-action: none;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08));
   border: 2px solid rgba(255, 255, 255, 0.35);
   color: #ffffff;
-  border-radius: 18px;
+  border-radius: clamp(14px, 2vh, 18px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -215,25 +223,26 @@ body {
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
-  touch-action: manipulation;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease;
-  width: 160px;
-  height: 70px;
-  font-size: 18px;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+  width: clamp(104px, 28vw, 150px);
+  height: clamp(56px, 8.5vh, 70px);
+  font-size: clamp(14px, 2vh, 18px);
   font-weight: 700;
 }
 
 .ctrl-btn:active, .ctrl-btn.active {
-  transform: scale(1.05);
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.6), rgba(217, 119, 6, 0.4));
+  transform: scale(0.95);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.8), rgba(217, 119, 6, 0.6));
   border-color: #f59e0b;
 }
 
 @media (max-width: 600px) {
   .ctrl-btn {
-    width: 120px;
-    height: 60px;
-    font-size: 15px;
+    width: clamp(96px, 26vw, 130px);
+    height: clamp(52px, 8vh, 64px);
+    font-size: 14px;
     border-radius: 14px;
   }
 }

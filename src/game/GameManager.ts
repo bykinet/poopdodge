@@ -187,12 +187,14 @@ export class GameManager {
       soundManager.playClean();
     }
 
-    // 2. Visual popup in Phaser overlay
-    this.overlay.showJudgmentText(event.judgment, event.poopX, event.scoreGained);
+    // 2. Visual popup in Phaser overlay positioned exactly over 3D coordinates
+    const pos = this.threeScene.projectWorldToScreen(event.poopX, 5, 0);
+    this.overlay.showJudgmentText(event.judgment, event.poopX, event.scoreGained, pos);
 
     // 3. Combo feedback every 5 combo
     if (event.currentStreak > 0 && event.currentStreak % 5 === 0) {
-      this.overlay.showCombo(event.currentStreak, event.playerX);
+      const playerPos = this.threeScene.projectWorldToScreen(event.playerX, 10, 0);
+      this.overlay.showCombo(event.currentStreak, event.playerX, playerPos);
     }
   };
 
@@ -209,7 +211,8 @@ export class GameManager {
   };
 
   private handleFirstShadowHint = () => {
-    this.overlay.showShadowHint(50, 'DROPS HERE');
+    const hintPos = this.threeScene.projectWorldToScreen(50, 2, 0);
+    this.overlay.showShadowHint(50, 'DROPS HERE', hintPos);
   };
 
   private handleItemCaught = (event: { itemStreak: number; scoreGained: number; isDouble: boolean; x: number }) => {
@@ -219,7 +222,8 @@ export class GameManager {
     } else {
       soundManager.playClean();
     }
-    this.overlay.showItemCatch(event.scoreGained, event.isDouble, event.itemStreak, event.x);
+    const itemPos = this.threeScene.projectWorldToScreen(event.x, 8, 0);
+    this.overlay.showItemCatch(event.scoreGained, event.isDouble, event.itemStreak, event.x, itemPos);
   };
 
   private handleGameOver = (outcome: 'success' | 'failure', _finalScore: number) => {

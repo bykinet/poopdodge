@@ -53,14 +53,19 @@ export class PhaserOverlay {
     // Phaser internal clock advances with Three.js dt
   }
 
-  public showJudgmentText(judgment: 'Clean' | 'Close' | 'Hit', worldX: number, scoreGained: number) {
+  public showJudgmentText(
+    judgment: 'Clean' | 'Close' | 'Hit',
+    worldX: number,
+    scoreGained: number,
+    screenPos?: { x: number; y: number }
+  ) {
     if (!this.game || !this.scene || !this.isReady) return;
 
-    // Convert worldX [0, 100] to canvas pixel coordinates
+    // Convert worldX [0, 100] to canvas pixel coordinates if screenPos not provided
     const canvasWidth = this.game.canvas.width;
     const canvasHeight = this.game.canvas.height;
-    const pixelX = (worldX / 100) * canvasWidth;
-    const pixelY = canvasHeight * 0.72; // Near bottom player ground
+    const pixelX = screenPos ? screenPos.x : (worldX / 100) * canvasWidth;
+    const pixelY = screenPos ? screenPos.y : canvasHeight * 0.72;
 
     let text = judgment.toUpperCase();
     let color = '#ffffff';
@@ -79,22 +84,22 @@ export class PhaserOverlay {
     this.renderFloatingText(text, pixelX, pixelY, color, 1.2);
   }
 
-  public showCombo(streak: number, worldX: number) {
+  public showCombo(streak: number, worldX: number, screenPos?: { x: number; y: number }) {
     if (!this.game || !this.scene || !this.isReady) return;
     const canvasWidth = this.game.canvas.width;
     const canvasHeight = this.game.canvas.height;
-    const pixelX = (worldX / 100) * canvasWidth;
-    const pixelY = canvasHeight * 0.65;
+    const pixelX = screenPos ? screenPos.x : (worldX / 100) * canvasWidth;
+    const pixelY = screenPos ? screenPos.y : canvasHeight * 0.65;
 
     this.renderFloatingText(`🔥 COMBO ${streak}!`, pixelX, pixelY, '#ffd60a', 1.4);
   }
 
-  public showShadowHint(worldX: number, text: string) {
+  public showShadowHint(worldX: number, text: string, screenPos?: { x: number; y: number }) {
     if (!this.game || !this.scene || !this.isReady) return;
     const canvasWidth = this.game.canvas.width;
     const canvasHeight = this.game.canvas.height;
-    const pixelX = (worldX / 100) * canvasWidth;
-    const pixelY = canvasHeight * 0.55;
+    const pixelX = screenPos ? screenPos.x : (worldX / 100) * canvasWidth;
+    const pixelY = screenPos ? screenPos.y : canvasHeight * 0.55;
 
     this.renderFloatingText(`⚠️ ${text}`, pixelX, pixelY, '#ffcc00', 1.1, 2000);
   }
@@ -109,12 +114,18 @@ export class PhaserOverlay {
     this.renderFloatingText(`🚨 ${text} 🚨`, pixelX, pixelY, '#ff2d55', 1.8, 2500);
   }
 
-  public showItemCatch(scoreGained: number, isDouble: boolean, streak: number, worldX: number) {
+  public showItemCatch(
+    scoreGained: number,
+    isDouble: boolean,
+    streak: number,
+    worldX: number,
+    screenPos?: { x: number; y: number }
+  ) {
     if (!this.game || !this.scene || !this.isReady) return;
     const canvasWidth = this.game.canvas.width;
     const canvasHeight = this.game.canvas.height;
-    const pixelX = (worldX / 100) * canvasWidth;
-    const pixelY = canvasHeight * 0.70;
+    const pixelX = screenPos ? screenPos.x : (worldX / 100) * canvasWidth;
+    const pixelY = screenPos ? screenPos.y : canvasHeight * 0.70;
 
     if (isDouble) {
       // "참 잘했어요" message with 2x score and fireworks explosion!

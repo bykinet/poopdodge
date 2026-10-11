@@ -83,18 +83,21 @@ export class ThreeScene {
     this.climaxSkyColor = new THREE.Color(0x282348);
     this.scene.background = this.skyColor.clone();
 
-    // Camera: fixed front elevated view with depth perspective
-    const aspect = config.container.clientWidth / config.container.clientHeight || 16 / 9;
+    // Camera setup: will be dynamically configured by updateCameraProjection
+    const initialWidth = config.container.clientWidth || 800;
+    const initialHeight = config.container.clientHeight || 450;
+    const aspect = initialWidth / initialHeight;
     this.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
-    this.camera.position.set(50, 32, 70);
-    this.camera.lookAt(50, 14, 0);
 
     // Renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    this.renderer.setSize(config.container.clientWidth, config.container.clientHeight);
+    this.renderer.setSize(initialWidth, initialHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     config.container.appendChild(this.renderer.domElement);
+
+    // Fit camera frustum to guarantee entire play area (0..100) is always visible
+    this.updateCameraProjection(initialWidth, initialHeight);
 
     // Lighting for rich 3D shading & figurine specular reflections
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
@@ -285,9 +288,55 @@ export class ThreeScene {
     const parent = this.renderer.domElement.parentElement;
     const width = parent.clientWidth;
     const height = parent.clientHeight;
-    this.camera.aspect = width / height;
+    this.updateCameraProjection(width, height);
+  };
+
+  public updateCameraProjection = (width: number, height: number) => {
+    if (!width || !height) return;
+    const aspect = width / height;
+    this.camera.aspect = aspect;
+
+    // The alley extends horizontally from x=0 to x=100 (walls at x=-2, x=102).
+    // We require at least 112 units visible at z=0 so both walls and all poops are safely on-screen.
+    const requiredWidth = 112;
+
+    if (aspect >= 1.6) {
+      // Desktop / Landscape (16:9, etc.)
+      this.camera.fov = 45;
+      this.camera.position.set(50, 32, 70);
+      this.camera.lookAt(50, 14, 0);
+    } else {
+      // Responsive for Tablets & Mobile Portrait (aspect < 1.6)
+      // Smoothly scale FOV between 45 and 58 deg to eliminate distortion
+      const targetFOV = Math.min(58, Math.max(45, 45 + (1.6 - aspect) * 12));
+      const tanHalfVFOV = Math.tan(THREE.MathUtils.degToRad(targetFOV / 2));
+      const tanHalfHFOV = tanHalfVFOV * aspect;
+
+      // Calculate target Z distance needed to see requiredWidth
+      const targetDistZ = (requiredWidth / 2) / tanHalfHFOV;
+
+      // Adjust camera elevation so King Butt (y=52) and Player (y=0) are framed
+      // in the upper/mid portion of the screen, leaving comfortable space above bottom controls
+      const targetElevY = 24 + targetDistZ * 0.22;
+
+      this.camera.fov = targetFOV;
+      this.camera.position.set(50, targetElevY, targetDistZ);
+      this.camera.lookAt(50, 24, 0);
+    }
+
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+    this.renderer.setSize(width, height, false);
+  };
+
+  public projectWorldToScreen(worldX: number, worldY: number, worldZ: number = 0): { x: number; y: number } {
+    const v = new THREE.Vector3(worldX, worldY, worldZ);
+    v.project(this.camera);
+    const width = this.renderer.domElement.clientWidth || 800;
+    const height = this.renderer.domElement.clientHeight || 450;
+    return {
+      x: (v.x * 0.5 + 0.5) * width,
+      y: (-(v.y * 0.5) + 0.5) * height,
+    };
   };
 
   private createAlleyEnvironment(): THREE.Mesh {
