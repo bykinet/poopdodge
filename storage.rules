@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // User character files: user-characters/{uid}/{fileName}
+    // Users can only read and write files within their own uid folder
+    match /user-characters/{uid}/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Public brand assets and endings (if served via storage)
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
