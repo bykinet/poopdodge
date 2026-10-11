@@ -177,56 +177,92 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
         </div>
 
         {/* Character Select (8 choices) */}
+        {/* Character Select (8 choices) - 3D Figurine Showcase */}
         <div>
-          <label style={{ fontSize: '14px', fontWeight: 600, color: '#e2e8f0', display: 'block', marginBottom: '8px' }}>
-            👤 {t('character')} (1 of 8)
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <label style={{ fontSize: '14px', fontWeight: 600, color: '#e2e8f0' }}>
+              👤 {t('character')} (1 of 8)
+            </label>
+            <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 700, background: 'rgba(245, 158, 11, 0.15)', padding: '2px 8px', borderRadius: '10px' }}>
+              ✨ 3D Figurine
+            </span>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
             {characters.map((char) => (
               <button
                 key={char.id}
                 type="button"
                 style={{
-                  padding: '10px 6px',
-                  borderRadius: '12px',
+                  padding: '10px 4px 8px 4px',
+                  borderRadius: '14px',
                   border: characterSlot === char.id ? '2px solid #f59e0b' : '1px solid var(--border-glass)',
-                  background: characterSlot === char.id ? 'rgba(245, 158, 11, 0.25)' : 'rgba(0,0,0,0.3)',
+                  background: characterSlot === char.id ? 'rgba(245, 158, 11, 0.22)' : 'rgba(0,0,0,0.3)',
                   color: '#ffffff',
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '6px',
+                  gap: '5px',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: characterSlot === char.id ? 'translateY(-2px)' : 'none',
                 }}
                 onClick={() => setCharacterSlot(char.id)}
               >
+                {/* 3D Figurine Display Showcase */}
                 <div
                   style={{
-                    width: '52px',
-                    height: '52px',
-                    borderRadius: '12px',
-                    background: char.colorHex,
+                    width: '60px',
+                    height: '62px',
+                    borderRadius: '14px',
+                    background: `radial-gradient(circle at 50% 30%, ${char.colorHex}44 0%, #111425 85%)`,
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '24px',
+                    position: 'relative',
                     overflow: 'hidden',
-                    boxShadow: characterSlot === char.id ? '0 0 12px rgba(245, 158, 11, 0.6)' : 'none',
+                    boxShadow: characterSlot === char.id ? `0 0 14px ${char.colorHex}99` : '0 4px 8px rgba(0,0,0,0.4)',
                   }}
                 >
                   {char.avatarUrl ? (
                     <img
                       src={char.avatarUrl}
                       alt={char.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      style={{
+                        width: '85%',
+                        height: '85%',
+                        objectFit: 'contain',
+                        filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))',
+                      }}
                     />
                   ) : char.category === 'animal' ? (
                     '🐾'
                   ) : (
                     '🏃'
                   )}
+                  {/* Miniature 3D acrylic plinth stand */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '2px',
+                      width: '64%',
+                      height: '5px',
+                      borderRadius: '50%',
+                      background: 'radial-gradient(ellipse, #f59e0b 0%, rgba(245, 158, 11, 0.2) 70%, transparent 100%)',
+                    }}
+                  />
                 </div>
-                <span style={{ fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '68px',
+                  }}
+                >
                   {char.name}
                 </span>
               </button>

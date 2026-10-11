@@ -11,13 +11,22 @@ export class ThreeScene {
   public camera: THREE.PerspectiveCamera;
   public renderer: THREE.WebGLRenderer;
 
-  // Elements
+  // 3D Figurine Elements
   private playerGroup: THREE.Group;
+  private playerPedestal: THREE.Group;
+  private playerHeadVolume: THREE.Mesh;
+  private playerTorsoVolume: THREE.Mesh;
+  private playerLeftArm: THREE.Group;
+  private playerRightArm: THREE.Group;
+  private playerLeftFoot: THREE.Mesh;
+  private playerRightFoot: THREE.Mesh;
   private playerFrontMesh: THREE.Mesh;
   private playerBackMesh: THREE.Mesh;
-  private playerBodyVolume: THREE.Mesh;
   private playerMaterial: THREE.MeshStandardMaterial;
   private playerShadowMesh: THREE.Mesh;
+
+  private figurinePlasticMat: THREE.MeshStandardMaterial;
+  private figurineAccentMat: THREE.MeshStandardMaterial;
 
   private ground: THREE.Mesh;
   private skyColor: THREE.Color;
@@ -85,11 +94,11 @@ export class ThreeScene {
     this.renderer.shadowMap.enabled = true;
     config.container.appendChild(this.renderer.domElement);
 
-    // Lighting for rich 3D shading & volume
+    // Lighting for rich 3D shading & figurine specular reflections
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     this.scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfff3e0, 1.1);
+    const dirLight = new THREE.DirectionalLight(0xfff3e0, 1.15);
     dirLight.position.set(45, 65, 45);
     this.scene.add(dirLight);
 
@@ -111,45 +120,140 @@ export class ThreeScene {
     this.buttGroup.position.set(50, 52, -5);
     this.scene.add(this.buttGroup);
 
-    // 3D Player Character with Volume & Directional Turning
+    // ==========================================
+    // 3D Collectible Figurine Player Character
+    // ==========================================
     const playerWidth = 8 * (2 / 3); // ~5.33
     const playerHeight = 12 * (2 / 3); // ~8.0
-    const playerDepth = 1.6;
+    const playerDepth = 1.8;
 
-    this.playerGroup = new THREE.Group();
+    // Figurine Materials
+    this.figurinePlasticMat = new THREE.MeshStandardMaterial({
+      color: 0xffedd5, // Porcelain vinyl skin
+      roughness: 0.28,
+      metalness: 0.08,
+    });
 
-    // Cutout material with zero background / zero margin
+    this.figurineAccentMat = new THREE.MeshStandardMaterial({
+      color: 0x3b82f6, // Character costume accent
+      roughness: 0.28,
+      metalness: 0.1,
+    });
+
     this.playerMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       side: THREE.DoubleSide,
       transparent: true,
       alphaTest: 0.1,
-      roughness: 0.35,
+      roughness: 0.28,
       metalness: 0.05,
     });
 
-    const playerGeo = new THREE.PlaneGeometry(playerWidth, playerHeight);
+    this.playerGroup = new THREE.Group();
 
-    // Front face
+    // 1. Collectible Acrylic/Resin Pedestal Plinth Base
+    const pedestalGroup = new THREE.Group();
+    const plinthGeo = new THREE.CylinderGeometry(playerWidth * 0.48, playerWidth * 0.54, 0.35, 32);
+    const plinthMat = new THREE.MeshStandardMaterial({
+      color: 0x18182b,
+      roughness: 0.18,
+      metalness: 0.4,
+    });
+    const plinth = new THREE.Mesh(plinthGeo, plinthMat);
+    pedestalGroup.add(plinth);
+
+    // Metallic gold rim around base
+    const goldRingGeo = new THREE.TorusGeometry(playerWidth * 0.51, 0.08, 16, 32);
+    const goldRingMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      roughness: 0.2,
+      metalness: 0.85,
+    });
+    const goldRing = new THREE.Mesh(goldRingGeo, goldRingMat);
+    goldRing.rotation.x = Math.PI / 2;
+    goldRing.position.y = 0.12;
+    pedestalGroup.add(goldRing);
+
+    pedestalGroup.position.set(0, -playerHeight * 0.46, 0);
+    this.playerGroup.add(pedestalGroup);
+    this.playerPedestal = pedestalGroup;
+
+    // 2. 3D Figurine Feet / Shoes
+    const shoeMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.3,
+      metalness: 0.05,
+    });
+    const shoeGeo = new THREE.SphereGeometry(0.72, 16, 14);
+
+    this.playerLeftFoot = new THREE.Mesh(shoeGeo, shoeMat);
+    this.playerLeftFoot.scale.set(0.9, 0.65, 1.35);
+    this.playerLeftFoot.position.set(-playerWidth * 0.22, -playerHeight * 0.4, 0);
+    this.playerGroup.add(this.playerLeftFoot);
+
+    this.playerRightFoot = new THREE.Mesh(shoeGeo, shoeMat);
+    this.playerRightFoot.scale.set(0.9, 0.65, 1.35);
+    this.playerRightFoot.position.set(playerWidth * 0.22, -playerHeight * 0.4, 0);
+    this.playerGroup.add(this.playerRightFoot);
+
+    // 3. 3D Figurine Torso (Chubby vinyl body)
+    const torsoGeo = new THREE.CylinderGeometry(playerWidth * 0.26, playerWidth * 0.32, playerHeight * 0.36, 24);
+    this.playerTorsoVolume = new THREE.Mesh(torsoGeo, this.figurineAccentMat);
+    this.playerTorsoVolume.position.set(0, -playerHeight * 0.16, 0);
+    this.playerGroup.add(this.playerTorsoVolume);
+
+    // 4. 3D Figurine Arms & Hands
+    const armGeo = new THREE.CylinderGeometry(0.3, 0.34, 1.5, 16);
+    const handGeo = new THREE.SphereGeometry(0.38, 16, 16);
+
+    // Left Arm
+    this.playerLeftArm = new THREE.Group();
+    this.playerLeftArm.position.set(-playerWidth * 0.36, -playerHeight * 0.06, 0);
+    const armMeshL = new THREE.Mesh(armGeo, this.figurineAccentMat);
+    armMeshL.position.set(0, -0.65, 0);
+    this.playerLeftArm.add(armMeshL);
+    const handMeshL = new THREE.Mesh(handGeo, this.figurinePlasticMat);
+    handMeshL.position.set(0, -1.4, 0);
+    this.playerLeftArm.add(handMeshL);
+    this.playerGroup.add(this.playerLeftArm);
+
+    // Right Arm
+    this.playerRightArm = new THREE.Group();
+    this.playerRightArm.position.set(playerWidth * 0.36, -playerHeight * 0.06, 0);
+    const armMeshR = new THREE.Mesh(armGeo, this.figurineAccentMat);
+    armMeshR.position.set(0, -0.65, 0);
+    this.playerRightArm.add(armMeshR);
+    const handMeshR = new THREE.Mesh(handGeo, this.figurinePlasticMat);
+    handMeshR.position.set(0, -1.4, 0);
+    this.playerRightArm.add(handMeshR);
+    this.playerGroup.add(this.playerRightArm);
+
+    // 5. 3D Figurine Head (Chibi round vinyl head)
+    const headGeo = new THREE.SphereGeometry(playerWidth * 0.38, 24, 24);
+    this.playerHeadVolume = new THREE.Mesh(headGeo, this.figurinePlasticMat);
+    this.playerHeadVolume.scale.set(1.05, 1.0, 0.88);
+    this.playerHeadVolume.position.set(0, playerHeight * 0.22, 0);
+    this.playerGroup.add(this.playerHeadVolume);
+
+    // Cute rounded ears on sides
+    const earGeo = new THREE.SphereGeometry(0.44, 16, 16);
+    const earL = new THREE.Mesh(earGeo, this.figurinePlasticMat);
+    earL.position.set(-playerWidth * 0.4, playerHeight * 0.22, 0);
+    this.playerGroup.add(earL);
+    const earR = new THREE.Mesh(earGeo, this.figurinePlasticMat);
+    earR.position.set(playerWidth * 0.4, playerHeight * 0.22, 0);
+    this.playerGroup.add(earR);
+
+    // 6. Character Standee Facades (Front & Back Decals)
+    const playerGeo = new THREE.PlaneGeometry(playerWidth, playerHeight);
     this.playerFrontMesh = new THREE.Mesh(playerGeo, this.playerMaterial);
-    this.playerFrontMesh.position.set(0, 0, playerDepth * 0.5);
+    this.playerFrontMesh.position.set(0, 0, playerDepth * 0.52);
     this.playerGroup.add(this.playerFrontMesh);
 
-    // Back face (mirrored)
     this.playerBackMesh = new THREE.Mesh(playerGeo, this.playerMaterial);
-    this.playerBackMesh.position.set(0, 0, -playerDepth * 0.5);
+    this.playerBackMesh.position.set(0, 0, -playerDepth * 0.52);
     this.playerBackMesh.rotation.y = Math.PI;
     this.playerGroup.add(this.playerBackMesh);
-
-    // 3D volumetric core body (pill/box with beveled depth)
-    const bodyGeo = new THREE.BoxGeometry(playerWidth * 0.92, playerHeight * 0.94, playerDepth * 0.9);
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0xffedd5,
-      roughness: 0.4,
-      metalness: 0.05,
-    });
-    this.playerBodyVolume = new THREE.Mesh(bodyGeo, bodyMat);
-    this.playerGroup.add(this.playerBodyVolume);
 
     this.playerGroup.position.set(50, playerHeight / 2, 0);
     this.scene.add(this.playerGroup);
@@ -163,7 +267,7 @@ export class ThreeScene {
     });
     this.playerShadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
     this.playerShadowMesh.rotation.x = -Math.PI / 2;
-    this.playerShadowMesh.scale.set(playerWidth * 0.5, playerWidth * 0.35, 1);
+    this.playerShadowMesh.scale.set(playerWidth * 0.55, playerWidth * 0.4, 1);
     this.playerShadowMesh.position.set(50, 0.03, 0);
     this.scene.add(this.playerShadowMesh);
 
@@ -315,6 +419,10 @@ export class ThreeScene {
     this.playerMaterial.map = null;
     this.playerMaterial.color.setHex(hex);
     this.playerMaterial.needsUpdate = true;
+    if (this.figurineAccentMat) {
+      this.figurineAccentMat.color.setHex(hex);
+      this.figurineAccentMat.needsUpdate = true;
+    }
   }
 
   public triggerCatchHop() {
@@ -334,12 +442,12 @@ export class ThreeScene {
     dt: number,
     climaxButtX?: number
   ) {
-    // 1. Player Velocity & Directional 3D Body Turn
+    // 1. Player Velocity & Directional 3D Figurine Body Turn
     const dx = playerX - this.lastPlayerX;
     this.lastPlayerX = playerX;
     const vx = dx / Math.max(dt, 0.001);
 
-    // Body Yaw rotation: turn body facing movement direction!
+    // Body Yaw rotation: turn 3D figurine facing movement direction!
     let targetYaw = 0;
     if (vx > 2.0) {
       targetYaw = 1.35; // Turn right (~78 deg)
@@ -377,10 +485,52 @@ export class ThreeScene {
       spinRotation = (1 - this.dodgeSpinTimer / 0.32) * Math.PI * 2; // Full 360 somersault!
     }
 
+    const playerHeight = 12 * (2 / 3);
     const basePlayerY = 4.0;
     this.playerGroup.position.x = playerX;
     this.playerGroup.position.y = basePlayerY + runBounce + idleBreathe + specialHop;
     this.playerGroup.position.z = isRunning ? Math.sin(performance.now() * 0.016) * 0.5 : 0;
+
+    // 3D Figurine Limb Animations (Arms & Stepping Shoes)
+    const runCycle = performance.now() * 0.022;
+    if (isRunning) {
+      // Arms swing back and forth like a running toy figurine
+      this.playerLeftArm.rotation.x = Math.sin(runCycle) * 0.75;
+      this.playerRightArm.rotation.x = -Math.sin(runCycle) * 0.75;
+      this.playerLeftArm.rotation.z = 0.2;
+      this.playerRightArm.rotation.z = -0.2;
+
+      // Shoes alternate cute steps
+      this.playerLeftFoot.position.z = Math.sin(runCycle) * 0.55;
+      this.playerLeftFoot.position.y = -playerHeight * 0.4 + Math.max(0, Math.sin(runCycle) * 0.35);
+      this.playerRightFoot.position.z = -Math.sin(runCycle) * 0.55;
+      this.playerRightFoot.position.y = -playerHeight * 0.4 + Math.max(0, -Math.sin(runCycle) * 0.35);
+
+      // Subtle head bob
+      this.playerHeadVolume.position.y = playerHeight * 0.22 + Math.abs(Math.sin(runCycle)) * 0.15;
+    } else {
+      // Idle resting pose with gentle figurine breathing
+      const idle = Math.sin(performance.now() * 0.005) * 0.08;
+      this.playerLeftArm.rotation.x = idle;
+      this.playerRightArm.rotation.x = -idle;
+      this.playerLeftArm.rotation.z = 0.15;
+      this.playerRightArm.rotation.z = -0.15;
+
+      this.playerLeftFoot.position.z = 0;
+      this.playerLeftFoot.position.y = -playerHeight * 0.4;
+      this.playerRightFoot.position.z = 0;
+      this.playerRightFoot.position.y = -playerHeight * 0.4;
+
+      this.playerHeadVolume.position.y = playerHeight * 0.22;
+    }
+
+    // Special catch hop celebration pose: raise arms high!
+    if (this.catchHopTimer > 0) {
+      this.playerLeftArm.rotation.z = -1.35;
+      this.playerRightArm.rotation.z = 1.35;
+      this.playerLeftArm.rotation.x = -0.3;
+      this.playerRightArm.rotation.x = -0.3;
+    }
 
     // Ground shadow follows player
     this.playerShadowMesh.position.x = playerX;
