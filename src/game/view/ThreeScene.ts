@@ -12,16 +12,28 @@ export class ThreeScene {
   public renderer: THREE.WebGLRenderer;
 
   // Elements
-  private playerMesh: THREE.Mesh;
-  private playerMaterial: THREE.MeshBasicMaterial;
+  private playerGroup: THREE.Group;
+  private playerFrontMesh: THREE.Mesh;
+  private playerBackMesh: THREE.Mesh;
+  private playerBodyVolume: THREE.Mesh;
+  private playerMaterial: THREE.MeshStandardMaterial;
+  private playerShadowMesh: THREE.Mesh;
+
   private ground: THREE.Mesh;
   private skyColor: THREE.Color;
   private climaxSkyColor: THREE.Color;
+
+  // King Butt (3D Flattened Model with Anus)
   private buttGroup: THREE.Group;
+  private buttAnusRing: THREE.Mesh;
+  private buttAnusHole: THREE.Mesh;
+  private buttLeftCheek: THREE.Mesh;
+  private buttRightCheek: THREE.Mesh;
 
   // Dynamic 3D animation states
   private lastPlayerX: number = 50;
   private currentTilt: number = 0;
+  private currentYaw: number = 0;
   private catchHopTimer: number = 0;
   private dodgeSpinTimer: number = 0;
 
@@ -30,8 +42,12 @@ export class ThreeScene {
   private toiletPaperTexture: THREE.Texture | null = null;
 
   // Meshes
-  private poopMeshes: Map<number, { mesh: THREE.Mesh; shadow: THREE.Mesh; ring?: THREE.LineLoop }> = new Map();
-  private itemMeshes: Map<number, { mesh: THREE.Mesh; shadow: THREE.Mesh }> = new Map();
+  private poopMeshes: Map<
+    number,
+    { group: THREE.Group; shadow: THREE.Mesh; ring?: THREE.LineLoop }
+  > = new Map();
+  private itemMeshes: Map<number, { group: THREE.Group; shadow: THREE.Mesh; ribbon?: THREE.Mesh }> =
+    new Map();
 
   private showShadowBorder: boolean;
   private isDestroyed = false;
@@ -39,7 +55,7 @@ export class ThreeScene {
   constructor(config: ThreeSceneConfig) {
     this.showShadowBorder = config.showShadowBorder ?? true;
 
-    // Load textures
+    // Load zero-margin transparent textures
     const textureLoader = new THREE.TextureLoader();
     textureLoader.load('/game-assets/items/poop.png', (tex) => {
       tex.colorSpace = THREE.SRGBColorSpace;
@@ -50,13 +66,13 @@ export class ThreeScene {
       this.toiletPaperTexture = tex;
     });
 
-    // Scene
+    // Scene setup
     this.scene = new THREE.Scene();
     this.skyColor = new THREE.Color(0x84c2f4);
     this.climaxSkyColor = new THREE.Color(0x282348);
     this.scene.background = this.skyColor.clone();
 
-    // Camera: slightly elevated Front fixed camera with dynamic 3D depth perception
+    // Camera: fixed front elevated view with depth perspective
     const aspect = config.container.clientWidth / config.container.clientHeight || 16 / 9;
     this.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
     this.camera.position.set(50, 32, 70);
@@ -66,38 +82,90 @@ export class ThreeScene {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     this.renderer.setSize(config.container.clientWidth, config.container.clientHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
     config.container.appendChild(this.renderer.domElement);
 
-    // Ambient & Directional Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+    // Lighting for rich 3D shading & volume
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     this.scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfff5e6, 0.85);
-    dirLight.position.set(50, 60, 40);
+    const dirLight = new THREE.DirectionalLight(0xfff3e0, 1.1);
+    dirLight.position.set(45, 65, 45);
     this.scene.add(dirLight);
 
-    // Anime Alley Background & Ground
+    const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.45);
+    fillLight.position.set(-20, 30, 20);
+    this.scene.add(fillLight);
+
+    // Alley Environment
     this.ground = this.createAlleyEnvironment();
     this.scene.add(this.ground);
 
-    // Giant Butt (Apricot silhouette width ~27 at top center)
-    this.buttGroup = this.createGiantButt();
+    // King Butt (3D Flattened Design with Anus)
+    const { group, anusRing, anusHole, leftCheek, rightCheek } = this.createKingButt3D();
+    this.buttGroup = group;
+    this.buttAnusRing = anusRing;
+    this.buttAnusHole = anusHole;
+    this.buttLeftCheek = leftCheek;
+    this.buttRightCheek = rightCheek;
     this.buttGroup.position.set(50, 52, -5);
     this.scene.add(this.buttGroup);
 
-    // Player Billboard (scaled to 2/3: width ~5.33, height 8.0, transparent cutout)
-    const playerWidth = 8 * (2 / 3);
-    const playerHeight = 12 * (2 / 3);
-    const playerGeo = new THREE.PlaneGeometry(playerWidth, playerHeight);
-    this.playerMaterial = new THREE.MeshBasicMaterial({
+    // 3D Player Character with Volume & Directional Turning
+    const playerWidth = 8 * (2 / 3); // ~5.33
+    const playerHeight = 12 * (2 / 3); // ~8.0
+    const playerDepth = 1.6;
+
+    this.playerGroup = new THREE.Group();
+
+    // Cutout material with zero background / zero margin
+    this.playerMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       side: THREE.DoubleSide,
       transparent: true,
-      alphaTest: 0.08, // Cutout transparent background cleanly!
+      alphaTest: 0.1,
+      roughness: 0.35,
+      metalness: 0.05,
     });
-    this.playerMesh = new THREE.Mesh(playerGeo, this.playerMaterial);
-    this.playerMesh.position.set(50, playerHeight / 2, 0);
-    this.scene.add(this.playerMesh);
+
+    const playerGeo = new THREE.PlaneGeometry(playerWidth, playerHeight);
+
+    // Front face
+    this.playerFrontMesh = new THREE.Mesh(playerGeo, this.playerMaterial);
+    this.playerFrontMesh.position.set(0, 0, playerDepth * 0.5);
+    this.playerGroup.add(this.playerFrontMesh);
+
+    // Back face (mirrored)
+    this.playerBackMesh = new THREE.Mesh(playerGeo, this.playerMaterial);
+    this.playerBackMesh.position.set(0, 0, -playerDepth * 0.5);
+    this.playerBackMesh.rotation.y = Math.PI;
+    this.playerGroup.add(this.playerBackMesh);
+
+    // 3D volumetric core body (pill/box with beveled depth)
+    const bodyGeo = new THREE.BoxGeometry(playerWidth * 0.92, playerHeight * 0.94, playerDepth * 0.9);
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: 0xffedd5,
+      roughness: 0.4,
+      metalness: 0.05,
+    });
+    this.playerBodyVolume = new THREE.Mesh(bodyGeo, bodyMat);
+    this.playerGroup.add(this.playerBodyVolume);
+
+    this.playerGroup.position.set(50, playerHeight / 2, 0);
+    this.scene.add(this.playerGroup);
+
+    // Player Ground Shadow
+    const shadowGeo = new THREE.CircleGeometry(1, 24);
+    const shadowMat = new THREE.MeshBasicMaterial({
+      color: 0x1f2937,
+      transparent: true,
+      opacity: 0.45,
+    });
+    this.playerShadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+    this.playerShadowMesh.rotation.x = -Math.PI / 2;
+    this.playerShadowMesh.scale.set(playerWidth * 0.5, playerWidth * 0.35, 1);
+    this.playerShadowMesh.position.set(50, 0.03, 0);
+    this.scene.add(this.playerShadowMesh);
 
     window.addEventListener('resize', this.onResize);
   }
@@ -156,29 +224,72 @@ export class ThreeScene {
     return groundMesh;
   }
 
-  private createGiantButt(): THREE.Group {
+  /**
+   * King Butt 3D: Flattened, plump peach design with shaded central crease and 3D anus opening
+   */
+  private createKingButt3D(): {
+    group: THREE.Group;
+    anusRing: THREE.Mesh;
+    anusHole: THREE.Mesh;
+    leftCheek: THREE.Mesh;
+    rightCheek: THREE.Mesh;
+  } {
     const group = new THREE.Group();
-    const buttMat = new THREE.MeshLambertMaterial({ color: 0xffbfa3 });
 
-    const leftCheekGeo = new THREE.SphereGeometry(8, 24, 24);
-    const leftCheek = new THREE.Mesh(leftCheekGeo, buttMat);
-    leftCheek.position.set(-5.5, 0, 0);
-    leftCheek.scale.set(1.1, 1.2, 0.8);
+    // Peach-skin 3D standard material
+    const skinMat = new THREE.MeshStandardMaterial({
+      color: 0xffaf96,
+      roughness: 0.42,
+      metalness: 0.05,
+    });
+
+    // Left Cheek (flattened along Z for flattened design)
+    const leftGeo = new THREE.SphereGeometry(8.5, 32, 32);
+    const leftCheek = new THREE.Mesh(leftGeo, skinMat);
+    leftCheek.position.set(-5.6, 0, 0);
+    leftCheek.scale.set(1.4, 1.1, 0.45); // Slightly flat in depth!
     group.add(leftCheek);
 
-    const rightCheekGeo = new THREE.SphereGeometry(8, 24, 24);
-    const rightCheek = new THREE.Mesh(rightCheekGeo, buttMat);
-    rightCheek.position.set(5.5, 0, 0);
-    rightCheek.scale.set(1.1, 1.2, 0.8);
+    // Right Cheek (flattened along Z)
+    const rightGeo = new THREE.SphereGeometry(8.5, 32, 32);
+    const rightCheek = new THREE.Mesh(rightGeo, skinMat);
+    rightCheek.position.set(5.6, 0, 0);
+    rightCheek.scale.set(1.4, 1.1, 0.45);
     group.add(rightCheek);
 
-    const creaseGeo = new THREE.CylinderGeometry(0.5, 0.5, 10);
-    const creaseMat = new THREE.MeshBasicMaterial({ color: 0xdf8d71 });
+    // Upper waistline bridge connecting both cheeks
+    const waistGeo = new THREE.CylinderGeometry(4.2, 5.0, 13, 24);
+    const waist = new THREE.Mesh(waistGeo, skinMat);
+    waist.rotation.z = Math.PI / 2;
+    waist.position.set(0, 4.5, -0.2);
+    waist.scale.set(1, 0.45, 1);
+    group.add(waist);
+
+    // Central Crease Line
+    const creaseGeo = new THREE.CylinderGeometry(0.45, 0.45, 12, 16);
+    const creaseMat = new THREE.MeshBasicMaterial({ color: 0xd97558 });
     const crease = new THREE.Mesh(creaseGeo, creaseMat);
-    crease.position.set(0, -1, 1);
+    crease.position.set(0, -0.5, 0.6);
     group.add(crease);
 
-    return group;
+    // 3D Anus Opening (Lower center where big poops emerge!)
+    const anusRingGeo = new THREE.TorusGeometry(1.5, 0.45, 16, 24);
+    const anusRingMat = new THREE.MeshStandardMaterial({
+      color: 0xc86450,
+      roughness: 0.5,
+      metalness: 0.05,
+    });
+    const anusRing = new THREE.Mesh(anusRingGeo, anusRingMat);
+    anusRing.position.set(0, -3.2, 0.7);
+    group.add(anusRing);
+
+    const anusHoleGeo = new THREE.CircleGeometry(1.3, 24);
+    const anusHoleMat = new THREE.MeshBasicMaterial({ color: 0x33130d });
+    const anusHole = new THREE.Mesh(anusHoleGeo, anusHoleMat);
+    anusHole.position.set(0, -3.2, 0.72);
+    group.add(anusHole);
+
+    return { group, anusRing, anusHole, leftCheek, rightCheek };
   }
 
   public setCharacterTexture(textureUrl: string) {
@@ -190,7 +301,7 @@ export class ThreeScene {
         this.playerMaterial.map = tex;
         this.playerMaterial.color.setHex(0xffffff);
         this.playerMaterial.transparent = true;
-        this.playerMaterial.alphaTest = 0.08;
+        this.playerMaterial.alphaTest = 0.1;
         this.playerMaterial.needsUpdate = true;
       },
       undefined,
@@ -220,25 +331,35 @@ export class ThreeScene {
     poops: Poop[],
     items: CollectibleItem[],
     isClimax: boolean,
-    dt: number
+    dt: number,
+    climaxButtX?: number
   ) {
-    // 1. Calculate dynamic player velocity & 3D action
+    // 1. Player Velocity & Directional 3D Body Turn
     const dx = playerX - this.lastPlayerX;
     this.lastPlayerX = playerX;
     const vx = dx / Math.max(dt, 0.001);
 
-    // Target dynamic 3D sprint lean / tilt angle
-    let targetTilt = 0;
-    if (vx < -3) {
-      targetTilt = -0.36; // Dynamic 3D sprint bank left (-20 deg)
-    } else if (vx > 3) {
-      targetTilt = 0.36; // Dynamic 3D sprint bank right (+20 deg)
+    // Body Yaw rotation: turn body facing movement direction!
+    let targetYaw = 0;
+    if (vx > 2.0) {
+      targetYaw = 1.35; // Turn right (~78 deg)
+    } else if (vx < -2.0) {
+      targetYaw = -1.35; // Turn left (~-78 deg)
     }
 
-    // Smooth tilt interpolation
-    this.currentTilt += (targetTilt - this.currentTilt) * Math.min(1, dt * 14);
+    // Smooth yaw turn interpolation
+    this.currentYaw += (targetYaw - this.currentYaw) * Math.min(1, dt * 14);
 
-    // Vertical running stride hop / bounce & idle breathing
+    // Target dynamic 3D sprint bank roll
+    let targetTilt = 0;
+    if (vx < -3) {
+      targetTilt = -0.32;
+    } else if (vx > 3) {
+      targetTilt = 0.32;
+    }
+    this.currentTilt += (targetTilt - this.currentTilt) * Math.min(1, dt * 12);
+
+    // Running stride bounce & idle breathing
     const isRunning = Math.abs(vx) > 3;
     const runBounce = isRunning ? Math.abs(Math.sin(performance.now() * 0.016)) * 0.55 : 0;
     const idleBreathe = !isRunning ? Math.sin(performance.now() * 0.004) * 0.15 : 0;
@@ -257,53 +378,62 @@ export class ThreeScene {
     }
 
     const basePlayerY = 4.0;
-    this.playerMesh.position.x = playerX;
-    this.playerMesh.position.y = basePlayerY + runBounce + idleBreathe + specialHop;
+    this.playerGroup.position.x = playerX;
+    this.playerGroup.position.y = basePlayerY + runBounce + idleBreathe + specialHop;
+    this.playerGroup.position.z = isRunning ? Math.sin(performance.now() * 0.016) * 0.5 : 0;
 
-    // Dynamic 3D depth oscillation along Z axis
-    this.playerMesh.position.z = isRunning ? Math.sin(performance.now() * 0.016) * 0.6 : 0;
+    // Ground shadow follows player
+    this.playerShadowMesh.position.x = playerX;
+    this.playerShadowMesh.scale.x = 2.67 * (1.0 - (specialHop + runBounce) * 0.12);
 
     if (invincibleTimer > 0) {
       // Comedic 3D wobble on hit
-      this.playerMesh.rotation.z = Math.sin(invincibleTimer * 38) * 0.4;
-      this.playerMesh.rotation.y = Math.sin(invincibleTimer * 20) * 0.4;
-      this.playerMesh.rotation.x = 0.25;
+      this.playerGroup.rotation.z = Math.sin(invincibleTimer * 38) * 0.4;
+      this.playerGroup.rotation.y = Math.sin(invincibleTimer * 20) * 0.4;
+      this.playerGroup.rotation.x = 0.25;
       const blink = Math.sin(invincibleTimer * 30) > 0;
       this.playerMaterial.opacity = blink ? 0.35 : 0.9;
     } else {
-      // Dynamic 3D running lean, banking, and face-turn
-      this.playerMesh.rotation.z = this.currentTilt + spinRotation;
-      this.playerMesh.rotation.y = -this.currentTilt * 0.75; // 3D yaw face towards motion
-      this.playerMesh.rotation.x = isRunning ? 0.18 : 0.0; // 3D pitch sprint lean forward
+      // Smooth body yaw turn, bank roll, and sprint lean forward
+      this.playerGroup.rotation.y = this.currentYaw;
+      this.playerGroup.rotation.z = this.currentTilt + spinRotation;
+      this.playerGroup.rotation.x = isRunning ? 0.2 : 0.0;
       this.playerMaterial.opacity = 1.0;
     }
 
     // Dynamic squash-and-stretch
     if (isRunning) {
-      this.playerMesh.scale.set(0.9, 1.12, 1.0);
+      this.playerGroup.scale.set(0.92, 1.1, 1.0);
     } else if (specialHop > 0) {
-      this.playerMesh.scale.set(1.12, 0.88, 1.0);
+      this.playerGroup.scale.set(1.1, 0.9, 1.0);
     } else {
-      this.playerMesh.scale.set(1.0, 1.0, 1.0);
+      this.playerGroup.scale.set(1.0, 1.0, 1.0);
     }
 
-    // 2. Climax sky & dynamic 3D giant butt pulse
+    // 2. King Butt: Horizontal movement & Climax Sky
     const targetSky = isClimax ? this.climaxSkyColor : this.skyColor;
     (this.scene.background as THREE.Color).lerp(targetSky, dt * 4.0);
 
     const targetButtY = isClimax ? 34 : 52;
     this.buttGroup.position.y += (targetButtY - this.buttGroup.position.y) * Math.min(1, dt * 5);
 
+    // Slowly move King Butt horizontally across the arena
+    const targetButtX = isClimax ? climaxButtX ?? 50 : 50;
+    this.buttGroup.position.x += (targetButtX - this.buttGroup.position.x) * Math.min(1, dt * 6);
+
     if (isClimax) {
-      const pulse = 1.0 + Math.sin(performance.now() * 0.008) * 0.09;
-      this.buttGroup.scale.set(pulse, pulse * 1.05, pulse);
-      this.buttGroup.rotation.z = Math.sin(performance.now() * 0.005) * 0.06;
+      const pulse = 1.0 + Math.sin(performance.now() * 0.008) * 0.08;
+      this.buttGroup.scale.set(pulse, pulse * 1.04, pulse);
+      this.buttGroup.rotation.z = Math.sin(performance.now() * 0.005) * 0.05;
     } else {
       this.buttGroup.scale.set(1, 1, 1);
       this.buttGroup.rotation.z = 0;
     }
 
-    // 3. Poops with dynamic 3D tumbling rotation
+    // Check if any giant poop is currently emerging to dilate anus
+    let isEmergingNow = false;
+
+    // 3. Poops (3D Volume & Swelling Emergence for Big Poop)
     const activePoopIds = new Set<number>();
     for (const poop of poops) {
       activePoopIds.add(poop.id);
@@ -312,23 +442,83 @@ export class ThreeScene {
       if (!meshObj) {
         meshObj = this.createPoopMeshes(poop);
         this.poopMeshes.set(poop.id, meshObj);
-        this.scene.add(meshObj.mesh);
+        this.scene.add(meshObj.group);
         this.scene.add(meshObj.shadow);
         if (meshObj.ring) this.scene.add(meshObj.ring);
       }
 
-      // Height decreases from 1 down to 0
+      if (poop.type === 'giant') {
+        const emergenceDuration = 0.5; // Big poop gradually swells out from anus over 0.5s!
+        if (poop.elapsedTime < emergenceDuration) {
+          isEmergingNow = true;
+          const t = poop.elapsedTime / emergenceDuration;
+          const easeT = Math.pow(t, 0.85);
+
+          // Emerge directly from King Butt's anus!
+          const anusX = this.buttGroup.position.x;
+          const anusY = this.buttGroup.position.y - 3.2;
+          const anusZ = this.buttGroup.position.z + 0.9;
+
+          // Inflate scale from 0.12 up to full 1.0
+          const scale = 0.15 + 0.85 * easeT;
+          meshObj.group.scale.set(scale, scale * 1.05, scale);
+
+          // Protrude downwards out from the hole
+          meshObj.group.position.set(anusX, anusY - easeT * 3.2, anusZ);
+          meshObj.group.rotation.x = t * 1.5;
+          meshObj.group.rotation.y = t * 2.0;
+          meshObj.group.rotation.z = Math.sin(t * 8) * 0.2;
+
+          // Shadow starts forming beneath
+          meshObj.shadow.position.set(anusX, 0.05, 0);
+          const shadowR = poop.radius * 0.3 * easeT;
+          meshObj.shadow.scale.set(shadowR, shadowR, 1);
+          if (meshObj.ring) {
+            meshObj.ring.position.set(anusX, 0.06, 0);
+            meshObj.ring.scale.set(shadowR, shadowR, 1);
+          }
+          continue;
+        } else {
+          // Detached & falling
+          const dropElapsed = poop.elapsedTime - emergenceDuration;
+          const dropDuration = Math.max(0.1, poop.fallDuration - emergenceDuration);
+          const dropT = Math.min(1, dropElapsed / dropDuration);
+          const startY = this.buttGroup.position.y - 6.4;
+          const poopY = startY * (1.0 - dropT) + 1.0;
+
+          meshObj.group.position.set(poop.x, poopY, 0);
+          meshObj.group.scale.set(1.0, 1.0, 1.0);
+
+          // 3D tumbling rotation around multiple axes
+          meshObj.group.rotation.x = poop.elapsedTime * 3.8;
+          meshObj.group.rotation.y = poop.elapsedTime * 3.2;
+          meshObj.group.rotation.z = Math.sin(poop.elapsedTime * 7) * 0.5;
+
+          // Ground shadow
+          meshObj.shadow.position.set(poop.x, 0.05, 0);
+          const shadowScaleFactor = 0.4 + 0.6 * dropT;
+          const currentRadius = poop.radius * shadowScaleFactor;
+          meshObj.shadow.scale.set(currentRadius, currentRadius, 1);
+          if (meshObj.ring) {
+            meshObj.ring.position.set(poop.x, 0.06, 0);
+            meshObj.ring.scale.set(currentRadius, currentRadius, 1);
+          }
+          continue;
+        }
+      }
+
+      // Normal and Large poops
       const poopY = 1 + poop.height * 31;
-      meshObj.mesh.position.set(poop.x, poopY, 0);
+      meshObj.group.position.set(poop.x, poopY, 0);
 
-      // True 3D tumbling rotation around multiple axes!
-      meshObj.mesh.rotation.x = poop.elapsedTime * 3.6;
-      meshObj.mesh.rotation.y = poop.elapsedTime * 2.8;
-      meshObj.mesh.rotation.z = Math.sin(poop.elapsedTime * 7) * 0.45;
+      // True 3D tumbling rotation
+      meshObj.group.rotation.x = poop.elapsedTime * 3.6;
+      meshObj.group.rotation.y = poop.elapsedTime * 2.8;
+      meshObj.group.rotation.z = Math.sin(poop.elapsedTime * 7) * 0.45;
 
-      // Dynamic 3D squash-and-stretch wobble
-      const jiggle = Math.sin(poop.elapsedTime * 14 + poop.id) * 0.14;
-      meshObj.mesh.scale.set(1.0 + jiggle, 1.0 - jiggle, 1.0);
+      // 3D squash-and-stretch wobble
+      const jiggle = Math.sin(poop.elapsedTime * 14 + poop.id) * 0.12;
+      meshObj.group.scale.set(1.0 + jiggle, 1.0 - jiggle, 1.0);
 
       // Shadow on ground
       meshObj.shadow.position.set(poop.x, 0.05, 0);
@@ -342,17 +532,26 @@ export class ThreeScene {
       }
     }
 
+    // Anus reacts to big poop emergence
+    if (isEmergingNow) {
+      this.buttAnusRing.scale.set(1.5, 1.5, 1.5);
+      this.buttAnusHole.scale.set(1.5, 1.5, 1.5);
+    } else {
+      this.buttAnusRing.scale.set(1.0, 1.0, 1.0);
+      this.buttAnusHole.scale.set(1.0, 1.0, 1.0);
+    }
+
     // Remove expired poops
     for (const [id, meshObj] of this.poopMeshes.entries()) {
       if (!activePoopIds.has(id)) {
-        this.scene.remove(meshObj.mesh);
+        this.scene.remove(meshObj.group);
         this.scene.remove(meshObj.shadow);
         if (meshObj.ring) this.scene.remove(meshObj.ring);
         this.poopMeshes.delete(id);
       }
     }
 
-    // 4. Collectible Items with 3D multi-axis tumbling and floating wave
+    // 4. Collectible Items (3D Volume & Multi-axis Fluttering Roll)
     const activeItemIds = new Set<number>();
     for (const item of items) {
       activeItemIds.add(item.id);
@@ -361,18 +560,22 @@ export class ThreeScene {
       if (!itemObj) {
         itemObj = this.createItemMeshes(item);
         this.itemMeshes.set(item.id, itemObj);
-        this.scene.add(itemObj.mesh);
+        this.scene.add(itemObj.group);
         this.scene.add(itemObj.shadow);
       }
 
       const itemY = 1 + item.height * 31;
-      itemObj.mesh.position.set(item.x, itemY, 0);
+      itemObj.group.position.set(item.x, itemY, 0);
 
-      // True 3D multi-axis fluttering, spinning, and depth floating
-      itemObj.mesh.rotation.x = item.elapsedTime * 2.5;
-      itemObj.mesh.rotation.y += dt * 4.0;
-      itemObj.mesh.rotation.z = Math.sin(item.elapsedTime * 6) * 0.5;
-      itemObj.mesh.position.z = Math.sin(item.elapsedTime * 4) * 0.8;
+      // 3D spinning, rolling, and depth fluttering
+      itemObj.group.rotation.x = item.elapsedTime * 3.2;
+      itemObj.group.rotation.y += dt * 4.5;
+      itemObj.group.rotation.z = Math.sin(item.elapsedTime * 6) * 0.55;
+      itemObj.group.position.z = Math.sin(item.elapsedTime * 4) * 0.8;
+
+      if (itemObj.ribbon) {
+        itemObj.ribbon.rotation.z = Math.sin(item.elapsedTime * 12) * 0.35;
+      }
 
       itemObj.shadow.position.set(item.x, 0.05, 0);
       const shadowScaleFactor = 0.3 + 0.7 * (1.0 - item.height);
@@ -383,7 +586,7 @@ export class ThreeScene {
     // Remove expired items
     for (const [id, itemObj] of this.itemMeshes.entries()) {
       if (!activeItemIds.has(id)) {
-        this.scene.remove(itemObj.mesh);
+        this.scene.remove(itemObj.group);
         this.scene.remove(itemObj.shadow);
         this.itemMeshes.delete(id);
       }
@@ -393,18 +596,66 @@ export class ThreeScene {
     this.renderer.render(this.scene, this.camera);
   }
 
+  /**
+   * Builds a full 3D Volumetric Poop Model with 3 glossy swirled tiers,
+   * cute cartoon eyes, and specular highlight!
+   */
   private createPoopMeshes(poop: Poop) {
-    const size = poop.radius * 2.2;
-    const poopGeo = new THREE.PlaneGeometry(size, size);
-    const poopMat = new THREE.MeshBasicMaterial({
-      map: this.poopTexture,
-      transparent: true,
-      alphaTest: 0.08, // Cutout transparent background cleanly!
-      side: THREE.DoubleSide,
-      color: 0xffffff,
-    });
-    const mesh = new THREE.Mesh(poopGeo, poopMat);
+    const group = new THREE.Group();
+    const r = poop.radius;
 
+    // Glossy chocolate brown standard material
+    const poopMat = new THREE.MeshStandardMaterial({
+      color: 0x6e3b18,
+      roughness: 0.32,
+      metalness: 0.08,
+    });
+
+    // Tier 1 (Base wide coil)
+    const baseGeo = new THREE.SphereGeometry(r * 0.95, 18, 14);
+    const baseMesh = new THREE.Mesh(baseGeo, poopMat);
+    baseMesh.scale.set(1.0, 0.55, 1.0);
+    baseMesh.position.set(0, -r * 0.25, 0);
+    group.add(baseMesh);
+
+    // Tier 2 (Middle coil)
+    const midGeo = new THREE.SphereGeometry(r * 0.72, 18, 14);
+    const midMesh = new THREE.Mesh(midGeo, poopMat);
+    midMesh.scale.set(1.0, 0.58, 1.0);
+    midMesh.position.set(0, r * 0.32, 0);
+    group.add(midMesh);
+
+    // Tier 3 (Top spiral tip)
+    const topGeo = new THREE.ConeGeometry(r * 0.45, r * 0.75, 16);
+    const topMesh = new THREE.Mesh(topGeo, poopMat);
+    topMesh.position.set(0, r * 0.9, 0);
+    topMesh.rotation.z = -0.18; // cute spiral swirl
+    group.add(topMesh);
+
+    // Cute Cartoon Eyes on front
+    const eyeWhiteGeo = new THREE.SphereGeometry(r * 0.2, 12, 12);
+    const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+
+    const eyePupilGeo = new THREE.SphereGeometry(r * 0.1, 10, 10);
+    const eyePupilMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+
+    // Left Eye
+    const leftEye = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
+    leftEye.position.set(-r * 0.32, r * 0.25, r * 0.72);
+    group.add(leftEye);
+    const leftPupil = new THREE.Mesh(eyePupilGeo, eyePupilMat);
+    leftPupil.position.set(-r * 0.3, r * 0.25, r * 0.88);
+    group.add(leftPupil);
+
+    // Right Eye
+    const rightEye = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
+    rightEye.position.set(r * 0.32, r * 0.25, r * 0.72);
+    group.add(rightEye);
+    const rightPupil = new THREE.Mesh(eyePupilGeo, eyePupilMat);
+    rightPupil.position.set(r * 0.3, r * 0.25, r * 0.88);
+    group.add(rightPupil);
+
+    // Ground Shadow
     const shadowGeo = new THREE.CircleGeometry(1, 32);
     const shadowMat = new THREE.MeshBasicMaterial({
       color: 0x1a120b,
@@ -428,21 +679,49 @@ export class ThreeScene {
       ring = new THREE.LineLoop(ringGeo, ringMat);
     }
 
-    return { mesh, shadow, ring };
+    return { group, shadow, ring };
   }
 
+  /**
+   * Builds a full 3D Volumetric Toilet Paper Model:
+   * White cylinder roll with cardboard kraft core hole and fluttering tail ribbon!
+   */
   private createItemMeshes(item: CollectibleItem) {
-    const size = item.radius * 2.5;
-    const itemGeo = new THREE.PlaneGeometry(size, size);
-    const itemMat = new THREE.MeshBasicMaterial({
-      map: this.toiletPaperTexture,
-      transparent: true,
-      alphaTest: 0.08, // Cutout transparent background cleanly!
-      side: THREE.DoubleSide,
-      color: 0xffffff,
-    });
-    const mesh = new THREE.Mesh(itemGeo, itemMat);
+    const group = new THREE.Group();
+    const r = item.radius * 1.1;
 
+    // Outer white roll cylinder
+    const rollGeo = new THREE.CylinderGeometry(r, r, r * 1.35, 24);
+    const rollMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.5,
+      metalness: 0.05,
+    });
+    const rollMesh = new THREE.Mesh(rollGeo, rollMat);
+    group.add(rollMesh);
+
+    // Inner hollow cardboard kraft tube
+    const coreGeo = new THREE.CylinderGeometry(r * 0.34, r * 0.34, r * 1.38, 16);
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: 0xb58955,
+      roughness: 0.8,
+    });
+    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+    group.add(coreMesh);
+
+    // Fluttering trailing paper ribbon
+    const ribbonGeo = new THREE.PlaneGeometry(r * 0.9, r * 1.6);
+    const ribbonMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      side: THREE.DoubleSide,
+      roughness: 0.5,
+    });
+    const ribbon = new THREE.Mesh(ribbonGeo, ribbonMat);
+    ribbon.position.set(0, -r * 1.1, r * 0.65);
+    ribbon.rotation.x = 0.35;
+    group.add(ribbon);
+
+    // Ground Shadow
     const shadowGeo = new THREE.CircleGeometry(1, 24);
     const shadowMat = new THREE.MeshBasicMaterial({
       color: 0x0284c7,
@@ -452,7 +731,7 @@ export class ThreeScene {
     const shadow = new THREE.Mesh(shadowGeo, shadowMat);
     shadow.rotation.x = -Math.PI / 2;
 
-    return { mesh, shadow };
+    return { group, shadow, ribbon };
   }
 
   public destroy() {

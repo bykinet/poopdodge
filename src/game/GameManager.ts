@@ -146,7 +146,8 @@ export class GameManager {
         this.sim.state.poops,
         this.sim.state.items,
         this.sim.state.isClimax,
-        dt
+        dt,
+        this.sim.getClimaxButtX()
       );
 
       this.onStateChange?.(this.sim.state);

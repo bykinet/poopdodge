@@ -293,11 +293,18 @@ export class PoopSim {
     });
   }
 
+  public getClimaxButtX(): number {
+    if (!this.state.isClimax) return 50;
+    const local = this.state.elapsed % CLIMAX_CYCLE_PERIOD;
+    const progress = Math.max(0, local - CLIMAX_START_LOCAL);
+    // King Butt slowly sways smoothly between x = 24 and 76
+    return 50 + Math.sin(progress * 1.5) * 26;
+  }
+
   private spawnGiantPoop() {
     const { fallDuration: baseFall } = getBaseCurves(this.state.settings.difficulty, this.state.elapsed);
-    const isAimed = Math.random() < 0.4; // 40% are locked to playerX at spawn
-    const spawnX = isAimed ? this.state.playerX : 12 + Math.random() * (88 - 12);
-    const fallDuration = Math.max(0.90, baseFall * 1.35);
+    const spawnX = this.getClimaxButtX();
+    const fallDuration = Math.max(1.10, baseFall * 1.4);
 
     this.state.poops.push({
       id: this.nextPoopId++,
@@ -307,7 +314,7 @@ export class PoopSim {
       fallDuration,
       elapsedTime: 0,
       height: 1.0,
-      isAimed,
+      isAimed: false,
     });
   }
 
