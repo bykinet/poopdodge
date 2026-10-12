@@ -611,3 +611,50 @@ body {
   display: block;
   width: 0;
 }
+
+/* 3-Second Cinematic Intro Animation Styles */
+.intro-speed-lines {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.5) 100%),
+    repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,0.06) 35px, rgba(255,255,255,0.06) 70px);
+  pointer-events: none;
+  animation: introLinesMove 0.4s linear infinite;
+}
+
+@keyframes introLinesMove {
+  0% { transform: scale(1) rotate(0deg); opacity: 0.6; }
+  50% { transform: scale(1.02) rotate(1deg); opacity: 0.9; }
+  100% { transform: scale(1) rotate(0deg); opacity: 0.6; }
+}
+
+.intro-scene-badge {
+  position: absolute;
+  bottom: clamp(30px, 6vh, 60px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(11, 11, 26, 0.75);
+  backdrop-filter: blur(10px);
+  border: 2px solid #ef4444;
+  color: #f87171;
+  font-size: clamp(16px, 2.5vh, 24px);
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  padding: 8px 24px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 25px rgba(0,0,0,0.7);
+  animation: introBadgeBounce 0.5s ease-out;
+  white-space: nowrap;
+}
+
+@keyframes introBadgeBounce {
+  0% { transform: translateX(-50%) scale(0.6); opacity: 0; }
+  70% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+@keyframes introPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+

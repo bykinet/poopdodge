@@ -12,6 +12,7 @@ import { Volume2, VolumeX } from 'lucide-react';
 import { soundManager } from '@/features/audio/soundManager';
 import '@/shared/i18n';
 import { getNextLanguage, getLanguageLabel } from '@/shared/i18n';
+import { IntroAnimation } from '@/features/intro/IntroAnimation';
 
 type PageRoute = 'first' | 'home' | 'play' | 'result' | 'mypage';
 
@@ -19,6 +20,7 @@ export const App: React.FC = () => {
   const { t, i18n } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState<PageRoute>('first');
+  const [showIntro, setShowIntro] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isMuted, setIsMuted] = useState(soundManager.getMuted());
   const [currentSettings, setCurrentSettings] = useState<GameSettings>({
@@ -81,6 +83,9 @@ export const App: React.FC = () => {
 
   return (
     <div style={{ width: '100vw', height: '100dvh', position: 'relative', overflow: 'hidden' }}>
+      {/* 3-Second AI Animated Intro on app entry */}
+      {showIntro && <IntroAnimation onComplete={() => setShowIntro(false)} />}
+
       {/* Global Top Bar (On non-play pages; PlayPage has integrated single-line HUD) */}
       {currentPage !== 'play' && (
         <div className="app-header-bar">
