@@ -12,10 +12,20 @@ interface PlayPageProps {
   user: UserProfile;
   settings: GameSettings;
   onFinishGame: (session: GameSessionRecord) => void;
+  onLogout?: () => void;
+  onNavigateMyPage?: () => void;
+  toggleLanguage?: () => void;
 }
 
-export const PlayPage: React.FC<PlayPageProps> = ({ user, settings, onFinishGame }) => {
-  const { t } = useTranslation();
+export const PlayPage: React.FC<PlayPageProps> = ({
+  user,
+  settings,
+  onFinishGame,
+  onLogout,
+  onNavigateMyPage,
+  toggleLanguage,
+}) => {
+  const { t, i18n } = useTranslation();
 
   const container3DRef = useRef<HTMLDivElement>(null);
   const containerOverlayRef = useRef<HTMLDivElement>(null);
@@ -215,82 +225,106 @@ export const PlayPage: React.FC<PlayPageProps> = ({ user, settings, onFinishGame
         {/* Top Bar HUD (Hidden during ending) */}
         {endingPhase === 'none' && (
           <div className="hud-topbar">
-            {/* Sound button (Always top-left) */}
-            <button
-              type="button"
-              className="hud-sound-btn"
-              onClick={toggleSound}
-              title={isMuted ? t('unmute') : t('mute')}
-            >
-              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-            </button>
+            {/* Left side: Sound button + Score HUD */}
+            <div className="hud-left-group">
+              {/* Sound button (Always top-left) */}
+              <button
+                type="button"
+                className="hud-sound-btn"
+                onClick={toggleSound}
+                title={isMuted ? t('unmute') : t('mute')}
+              >
+                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+              </button>
 
-            {/* Time with BIG indicator in climax */}
-            <div className="hud-item">
-              <span className="hud-label">{t('timeLeft')}:</span>
-              <span style={{ color: '#38bdf8', fontVariantNumeric: 'tabular-nums' }}>
-                {remainingSeconds}s
-              </span>
-              {simState?.isClimax && <span className="hud-badge-big">{t('bigLabel')}</span>}
-            </div>
-
-            {/* Lives */}
-            <div className="hud-item">
-              <span className="hud-label">{t('livesLabel')}:</span>
-              <span className="hud-hearts" style={{ color: '#ef4444' }}>
-                {'❤️'.repeat(simState?.lives || 0)}
-              </span>
-            </div>
-
-            {/* Score */}
-            <div className="hud-item">
-              <span className="hud-label">{t('scoreLabel')}:</span>
-              <span style={{ color: '#f59e0b', fontVariantNumeric: 'tabular-nums' }}>
-                {simState?.score || 0}
-              </span>
-            </div>
-
-            {/* Combo */}
-            <div className="hud-item">
-              <span className="hud-label">{t('comboLabel')}:</span>
-              <span style={{ color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>
-                {simState?.streak || 0}
-              </span>
-            </div>
-
-            {/* DEV TOOLS (rendered strictly when import.meta.env.DEV is true) */}
-            {import.meta.env.DEV && (
-              <div className="hud-devtools" style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
-                <button
-                  type="button"
-                  style={{ background: '#374151', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '11px', cursor: 'pointer' }}
-                  onClick={togglePause}
-                >
-                  {isPaused ? t('devGo') : t('devStop')}
-                </button>
-                <button
-                  type="button"
-                  style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '11px', cursor: 'pointer' }}
-                  onClick={() => gameManagerRef.current?.devTriggerClimax()}
-                >
-                  {t('devTriggerClimax')}
-                </button>
-                <button
-                  type="button"
-                  style={{ background: '#059669', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '11px', cursor: 'pointer' }}
-                  onClick={() => gameManagerRef.current?.devTriggerSuccess()}
-                >
-                  {t('devTriggerSuccess')}
-                </button>
-                <button
-                  type="button"
-                  style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '11px', cursor: 'pointer' }}
-                  onClick={() => gameManagerRef.current?.devTriggerFailure()}
-                >
-                  {t('devTriggerFailure')}
-                </button>
+              {/* Time with BIG indicator in climax */}
+              <div className="hud-item">
+                <span className="hud-label">{t('timeLeft')}:</span>
+                <span style={{ color: '#38bdf8', fontVariantNumeric: 'tabular-nums' }}>
+                  {remainingSeconds}s
+                </span>
+                {simState?.isClimax && <span className="hud-badge-big">{t('bigLabel')}</span>}
               </div>
-            )}
+
+              {/* Lives */}
+              <div className="hud-item">
+                <span className="hud-label">{t('livesLabel')}:</span>
+                <span className="hud-hearts" style={{ color: '#ef4444' }}>
+                  {'❤️'.repeat(simState?.lives || 0)}
+                </span>
+              </div>
+
+              {/* Score */}
+              <div className="hud-item">
+                <span className="hud-label">{t('scoreLabel')}:</span>
+                <span style={{ color: '#f59e0b', fontVariantNumeric: 'tabular-nums' }}>
+                  {simState?.score || 0}
+                </span>
+              </div>
+
+              {/* Combo */}
+              <div className="hud-item">
+                <span className="hud-label">{t('comboLabel')}:</span>
+                <span style={{ color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>
+                  {simState?.streak || 0}
+                </span>
+              </div>
+            </div>
+
+            {/* Right side: Language, Logout, My Page, Dev Tools */}
+            <div className="hud-right-group">
+              {toggleLanguage && (
+                <button type="button" className="lang-btn hud-nav-btn" onClick={toggleLanguage}>
+                  {i18n.language === 'en' ? '한국어' : 'English'}
+                </button>
+              )}
+
+              {user && onLogout && (
+                <button type="button" className="nav-btn hud-nav-btn" onClick={onLogout}>
+                  {t('logout')}
+                </button>
+              )}
+
+              {user && onNavigateMyPage && (
+                <button type="button" className="nav-btn hud-nav-btn" onClick={onNavigateMyPage}>
+                  {t('myPage')}
+                </button>
+              )}
+
+              {/* DEV TOOLS (rendered strictly when import.meta.env.DEV is true) */}
+              {import.meta.env.DEV && (
+                <div className="hud-devtools">
+                  <button
+                    type="button"
+                    style={{ background: '#374151', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 4px', fontSize: '10px', cursor: 'pointer' }}
+                    onClick={togglePause}
+                  >
+                    {isPaused ? t('devGo') : t('devStop')}
+                  </button>
+                  <button
+                    type="button"
+                    style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 4px', fontSize: '10px', cursor: 'pointer' }}
+                    onClick={() => gameManagerRef.current?.devTriggerClimax()}
+                  >
+                    {t('devTriggerClimax')}
+                  </button>
+                  <button
+                    type="button"
+                    style={{ background: '#059669', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 4px', fontSize: '10px', cursor: 'pointer' }}
+                    onClick={() => gameManagerRef.current?.devTriggerSuccess()}
+                  >
+                    {t('devTriggerSuccess')}
+                  </button>
+                  <button
+                    type="button"
+                    style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 4px', fontSize: '10px', cursor: 'pointer' }}
+                    onClick={() => gameManagerRef.current?.devTriggerFailure()}
+                  >
+                    {t('devTriggerFailure')}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

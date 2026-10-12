@@ -48,7 +48,34 @@ body {
   overflow: hidden;
 }
 
-/* App Header Nav */
+/* Global App Header Bar (Non-play pages: single line) */
+.app-header-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(6px, 1.2vh, 12px) clamp(8px, 1.5vw, 16px);
+  z-index: 100;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  pointer-events: none;
+}
+.app-header-bar > * {
+  pointer-events: auto;
+}
+
+.app-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+}
+
 .app-nav {
   position: absolute;
   top: clamp(6px, 1.2vh, 12px);
@@ -57,6 +84,8 @@ body {
   align-items: center;
   gap: 8px;
   z-index: 100;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
 }
 
 .nav-btn {
@@ -70,6 +99,7 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   backdrop-filter: blur(8px);
+  white-space: nowrap !important;
 }
 
 .nav-btn:hover {
@@ -85,6 +115,7 @@ body {
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
+  white-space: nowrap !important;
 }
 
 /* Game Frame: 16:9 Centered on Desktop, responsive on Mobile */
@@ -167,24 +198,58 @@ body {
   right: 0;
   background-color: var(--bg-topbar);
   color: #ffffff;
-  padding: 8px 16px;
+  padding: 6px 14px;
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   flex-wrap: nowrap !important;
   white-space: nowrap !important;
-  gap: 12px;
+  gap: 8px;
   z-index: 50;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   overflow-x: auto;
   scrollbar-width: none;
 }
 .hud-topbar::-webkit-scrollbar {
   display: none;
+}
+
+.hud-left-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.hud-right-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
+
+.hud-nav-btn {
+  padding: 3px 8px !important;
+  font-size: 11px !important;
+  border-radius: 6px !important;
+  backdrop-filter: blur(6px);
+  white-space: nowrap !important;
+}
+
+.hud-devtools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .hud-sound-btn {
@@ -195,7 +260,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: 3px;
   flex-shrink: 0;
   transition: transform 0.15s ease, color 0.15s ease;
 }
@@ -208,7 +273,7 @@ body {
 .hud-item {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -228,31 +293,61 @@ body {
 @media (max-width: 640px) {
   .hud-topbar {
     flex-wrap: nowrap !important;
-    padding: 6px 8px;
-    font-size: 12px;
-    gap: 8px;
+    padding: 5px 8px;
+    font-size: 11.5px;
+    gap: 6px;
   }
-  .hud-item {
+  .hud-left-group {
+    gap: 6px;
+  }
+  .hud-right-group {
     gap: 4px;
-  }
-  .hud-sound-btn {
-    padding: 2px;
-  }
-}
-
-@media (max-width: 420px) {
-  .hud-topbar {
-    flex-wrap: nowrap !important;
-    padding: 4px 6px;
-    font-size: 11px;
-    gap: 5px;
   }
   .hud-item {
     gap: 3px;
   }
+  .hud-sound-btn {
+    padding: 2px;
+  }
+  .hud-sound-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  .hud-nav-btn {
+    padding: 2px 6px !important;
+    font-size: 10px !important;
+  }
+}
+
+@media (max-width: 440px) {
+  .hud-topbar {
+    flex-wrap: nowrap !important;
+    padding: 4px 6px;
+    font-size: 10.5px;
+    gap: 4px;
+  }
+  .hud-left-group {
+    gap: 4px;
+  }
+  .hud-right-group {
+    gap: 3px;
+  }
+  .hud-item {
+    gap: 2px;
+  }
   .hud-hearts {
     letter-spacing: -2px;
     font-size: 0.85em;
+  }
+  .hud-nav-btn {
+    padding: 2px 4px !important;
+    font-size: 9.5px !important;
+  }
+}
+
+@media (max-width: 375px) {
+  .hud-label {
+    display: none;
   }
 }
 

@@ -8,6 +8,8 @@ import { MyPage } from '@/pages/MyPage';
 import { UserProfile, logoutUser } from '@/features/auth/authService';
 import { GameSettings } from '@/game/sim/types';
 import { GameSessionRecord } from '@/features/session/sessionService';
+import { Volume2, VolumeX } from 'lucide-react';
+import { soundManager } from '@/features/audio/soundManager';
 import '@/shared/i18n';
 
 type PageRoute = 'first' | 'home' | 'play' | 'result' | 'mypage';
@@ -17,6 +19,7 @@ export const App: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState<PageRoute>('first');
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [isMuted, setIsMuted] = useState(soundManager.getMuted());
   const [currentSettings, setCurrentSettings] = useState<GameSettings>({
     duration: 60,
     difficulty: 1,
@@ -67,29 +70,51 @@ export const App: React.FC = () => {
     i18n.changeLanguage(nextLang);
   };
 
+  const toggleSound = () => {
+    const muted = soundManager.toggleMute();
+    setIsMuted(muted);
+  };
+
   return (
     <div style={{ width: '100vw', height: '100dvh', position: 'relative', overflow: 'hidden' }}>
-      {/* Upper Right Navigation (Except on FirstPage) */}
-      <div className="app-nav">
-        <button type="button" className="lang-btn" onClick={toggleLanguage}>
-          {i18n.language === 'en' ? '한국어' : 'English'}
-        </button>
+      {/* Global Top Bar (On non-play pages; PlayPage has integrated single-line HUD) */}
+      {currentPage !== 'play' && (
+        <div className="app-header-bar">
+          {/* Sound button (Always top-left) */}
+          <button
+            type="button"
+            className="hud-sound-btn"
+            onClick={toggleSound}
+            title={isMuted ? t('unmute') : t('mute')}
+          >
+            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
 
-        {user && currentPage !== 'first' && (
-          <>
-            <button type="button" className="nav-btn" onClick={handleLogout}>
-              {t('logout')}
+          <div style={{ flex: 1 }} />
+
+          {/* Right Navigation Actions */}
+          <div className="app-nav-group">
+            <button type="button" className="lang-btn" onClick={toggleLanguage}>
+              {i18n.language === 'en' ? '한국어' : 'English'}
             </button>
-            <button
-              type="button"
-              className="nav-btn"
-              onClick={() => setCurrentPage(currentPage === 'mypage' ? 'home' : 'mypage')}
-            >
-              {t('myPage')}
-            </button>
-          </>
-        )}
-      </div>
+
+            {user && currentPage !== 'first' && (
+              <>
+                <button type="button" className="nav-btn" onClick={handleLogout}>
+                  {t('logout')}
+                </button>
+                <button
+                  type="button"
+                  className="nav-btn"
+                  onClick={() => setCurrentPage(currentPage === 'mypage' ? 'home' : 'mypage')}
+                >
+                  {currentPage === 'mypage' ? t('home') || 'Home' : t('myPage')}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Pages */}
       {currentPage === 'first' && <FirstPage onLoginSuccess={handleLoginSuccess} />}
@@ -99,7 +124,14 @@ export const App: React.FC = () => {
       )}
 
       {currentPage === 'play' && user && (
-        <PlayPage user={user} settings={currentSettings} onFinishGame={handleFinishGame} />
+        <PlayPage
+          user={user}
+          settings={currentSettings}
+          onFinishGame={handleFinishGame}
+          onLogout={handleLogout}
+          onNavigateMyPage={() => setCurrentPage('mypage')}
+          toggleLanguage={toggleLanguage}
+        />
       )}
 
       {currentPage === 'result' && user && lastSession && (
