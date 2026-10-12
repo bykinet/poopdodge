@@ -243,9 +243,23 @@ export class PoopSim {
   }
 
   private spawnCollectibleItem() {
-    const minItemX = PLAYER_MIN_X + 2;
-    const maxItemX = PLAYER_MAX_X - 2;
-    const spawnX = minItemX + Math.random() * (maxItemX - minItemX);
+    let spawnX: number;
+    const roll = Math.random();
+    if (roll < 0.2) {
+      // 20% drops on left edge zone [PLAYER_MIN_X, PLAYER_MIN_X + 8]
+      spawnX = PLAYER_MIN_X + Math.random() * 8;
+    } else if (roll < 0.4) {
+      // 20% drops on right edge zone [PLAYER_MAX_X - 8, PLAYER_MAX_X]
+      spawnX = PLAYER_MAX_X - Math.random() * 8;
+    } else if (roll < 0.65) {
+      // 25% drops around player to reward dodging & staying active
+      const offset = (Math.random() - 0.5) * 16;
+      spawnX = Math.max(PLAYER_MIN_X, Math.min(PLAYER_MAX_X, this.state.playerX + offset));
+    } else {
+      // 35% uniform distribution across the entire playfield
+      spawnX = PLAYER_MIN_X + Math.random() * (PLAYER_MAX_X - PLAYER_MIN_X);
+    }
+
     const fallDuration = 1.8 + Math.random() * 0.7; // 1.8s to 2.5s
     this.state.items.push({
       id: this.nextItemId++,
@@ -263,17 +277,23 @@ export class PoopSim {
     const isLarge = Math.random() < 0.2;
     let isAimed = false;
 
-    // In difficulty 2 and 3, after 20% elapsed time, 20% of non-large spawns are aimed
-    if (!isLarge && this.state.settings.difficulty > 1) {
+    const isAtLeftEdge = this.state.playerX <= PLAYER_MIN_X + 6;
+    const isAtRightEdge = this.state.playerX >= PLAYER_MAX_X - 6;
+
+    // 1. Anti Edge-Camping: If player is staying at either edge (left or right),
+    // aggressively target player (65% chance) so they MUST move to survive!
+    if (!isLarge && (isAtLeftEdge || isAtRightEdge)) {
+      if (Math.random() < 0.65) {
+        isAimed = true;
+      }
+    }
+
+    // 2. Mid/Late game aimed poops in difficulty 2 & 3
+    if (!isAimed && !isLarge && this.state.settings.difficulty > 1) {
       if (this.state.elapsed >= this.state.settings.duration * 0.2) {
-        if (Math.random() < 0.2) {
+        if (Math.random() < 0.25) {
           isAimed = true;
         }
-      }
-    } else if (!isLarge && (this.state.playerX <= 12 || this.state.playerX >= 88)) {
-      // Prevent edge camping: If player is staying at the left or right edge, 30% of drops directly target player
-      if (Math.random() < 0.3) {
-        isAimed = true;
       }
     }
 
@@ -281,8 +301,18 @@ export class PoopSim {
     if (isAimed) {
       spawnX = this.state.playerX;
     } else {
-      // Full playfield coverage matching the entire player movement range (PLAYER_MIN_X ~ PLAYER_MAX_X)
-      spawnX = PLAYER_MIN_X + Math.random() * (PLAYER_MAX_X - PLAYER_MIN_X);
+      // Ensure edges receive drops adequately even when not directly aimed
+      const roll = Math.random();
+      if (roll < 0.18) {
+        // Left boundary zone [PLAYER_MIN_X, PLAYER_MIN_X + 10]
+        spawnX = PLAYER_MIN_X + Math.random() * 10;
+      } else if (roll < 0.36) {
+        // Right boundary zone [PLAYER_MAX_X - 10, PLAYER_MAX_X]
+        spawnX = PLAYER_MAX_X - Math.random() * 10;
+      } else {
+        // Full playfield coverage
+        spawnX = PLAYER_MIN_X + Math.random() * (PLAYER_MAX_X - PLAYER_MIN_X);
+      }
     }
 
     const type: PoopType = isLarge ? 'large' : 'normal';
@@ -305,8 +335,8 @@ export class PoopSim {
     if (!this.state.isClimax) return 50;
     const local = this.state.elapsed % CLIMAX_CYCLE_PERIOD;
     const progress = Math.max(0, local - CLIMAX_START_LOCAL);
-    // King Butt sways smoothly across the arena between x = 16 and 84
-    return 50 + Math.sin(progress * 1.5) * 34;
+    // King Butt sways across the arena reaching both edges (between x = 8 and 92)
+    return 50 + Math.sin(progress * 1.5) * 42;
   }
 
   private spawnGiantPoop() {

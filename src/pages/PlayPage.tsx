@@ -215,9 +215,19 @@ export const PlayPage: React.FC<PlayPageProps> = ({ user, settings, onFinishGame
         {/* Top Bar HUD (Hidden during ending) */}
         {endingPhase === 'none' && (
           <div className="hud-topbar">
+            {/* Sound button (Always top-left) */}
+            <button
+              type="button"
+              className="hud-sound-btn"
+              onClick={toggleSound}
+              title={isMuted ? t('unmute') : t('mute')}
+            >
+              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
+
             {/* Time with BIG indicator in climax */}
             <div className="hud-item">
-              <span style={{ color: '#94a3b8' }}>{t('timeLeft')}:</span>
+              <span className="hud-label">{t('timeLeft')}:</span>
               <span style={{ color: '#38bdf8', fontVariantNumeric: 'tabular-nums' }}>
                 {remainingSeconds}s
               </span>
@@ -226,15 +236,15 @@ export const PlayPage: React.FC<PlayPageProps> = ({ user, settings, onFinishGame
 
             {/* Lives */}
             <div className="hud-item">
-              <span style={{ color: '#94a3b8' }}>{t('livesLabel')}:</span>
-              <span style={{ color: '#ef4444' }}>
+              <span className="hud-label">{t('livesLabel')}:</span>
+              <span className="hud-hearts" style={{ color: '#ef4444' }}>
                 {'❤️'.repeat(simState?.lives || 0)}
               </span>
             </div>
 
             {/* Score */}
             <div className="hud-item">
-              <span style={{ color: '#94a3b8' }}>{t('scoreLabel')}:</span>
+              <span className="hud-label">{t('scoreLabel')}:</span>
               <span style={{ color: '#f59e0b', fontVariantNumeric: 'tabular-nums' }}>
                 {simState?.score || 0}
               </span>
@@ -242,33 +252,15 @@ export const PlayPage: React.FC<PlayPageProps> = ({ user, settings, onFinishGame
 
             {/* Combo */}
             <div className="hud-item">
-              <span style={{ color: '#94a3b8' }}>{t('comboLabel')}:</span>
+              <span className="hud-label">{t('comboLabel')}:</span>
               <span style={{ color: '#10b981', fontVariantNumeric: 'tabular-nums' }}>
                 {simState?.streak || 0}
               </span>
             </div>
 
-            {/* Mute button */}
-            <button
-              type="button"
-              onClick={toggleSound}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#cbd5e1',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '4px',
-              }}
-              title={isMuted ? t('unmute') : t('mute')}
-            >
-              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-            </button>
-
             {/* DEV TOOLS (rendered strictly when import.meta.env.DEV is true) */}
             {import.meta.env.DEV && (
-              <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
+              <div className="hud-devtools" style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
                 <button
                   type="button"
                   style={{ background: '#374151', color: '#fff', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '11px', cursor: 'pointer' }}

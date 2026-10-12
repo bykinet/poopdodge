@@ -2,7 +2,7 @@
 
 class SoundManager {
   private ctx: AudioContext | null = null;
-  private isMuted: boolean = false;
+  private isMuted: boolean = true;
   private bgmOsc: OscillatorNode | null = null;
   private bgmGain: GainNode | null = null;
   private climaxPercussionInterval: number | null = null;
@@ -11,6 +11,8 @@ class SoundManager {
     const saved = localStorage.getItem('poopdodge_muted');
     if (saved !== null) {
       this.isMuted = saved === 'true';
+    } else {
+      this.isMuted = true;
     }
   }
 

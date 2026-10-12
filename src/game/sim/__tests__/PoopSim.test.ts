@@ -158,6 +158,31 @@ describe('PoopSim Unit Tests', () => {
       }
     }
     expect(targetedAtLeftEdge).toBe(true);
+
+    // Test edge-camping targeting at right edge (playerX = 94)
+    sim.state.playerX = 94;
+    let targetedAtRightEdge = false;
+    for (let i = 0; i < 50; i++) {
+      (sim as any).spawnBasePoop();
+      const p = sim.state.poops[sim.state.poops.length - 1];
+      if (p.isAimed && p.x === 94) {
+        targetedAtRightEdge = true;
+        break;
+      }
+    }
+    expect(targetedAtRightEdge).toBe(true);
+
+    // Test items spawn at edges as well
+    let minItemX = 100;
+    let maxItemX = 0;
+    for (let i = 0; i < 100; i++) {
+      (sim as any).spawnCollectibleItem();
+      const item = sim.state.items[sim.state.items.length - 1];
+      if (item.x < minItemX) minItemX = item.x;
+      if (item.x > maxItemX) maxItemX = item.x;
+    }
+    expect(minItemX).toBeLessThan(14);
+    expect(maxItemX).toBeGreaterThan(86);
   });
 
   it('limits concurrent giant poops in air to 2', () => {

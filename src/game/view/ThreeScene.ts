@@ -18,7 +18,6 @@ export class ThreeScene {
 
   // 3D Figurine Elements
   private playerGroup: THREE.Group;
-  private playerPedestal: THREE.Group;
   private playerHeadVolume: THREE.Mesh;
   private playerTorsoVolume: THREE.Mesh;
   private playerLeftArm: THREE.Group;
@@ -159,34 +158,7 @@ export class ThreeScene {
 
     this.playerGroup = new THREE.Group();
 
-    // 1. Collectible Acrylic/Resin Pedestal Plinth Base
-    const pedestalGroup = new THREE.Group();
-    const plinthGeo = new THREE.CylinderGeometry(playerWidth * 0.48, playerWidth * 0.54, 0.35, 32);
-    const plinthMat = new THREE.MeshStandardMaterial({
-      color: 0x18182b,
-      roughness: 0.18,
-      metalness: 0.4,
-    });
-    const plinth = new THREE.Mesh(plinthGeo, plinthMat);
-    pedestalGroup.add(plinth);
-
-    // Metallic gold rim around base
-    const goldRingGeo = new THREE.TorusGeometry(playerWidth * 0.51, 0.08, 16, 32);
-    const goldRingMat = new THREE.MeshStandardMaterial({
-      color: 0xf59e0b,
-      roughness: 0.2,
-      metalness: 0.85,
-    });
-    const goldRing = new THREE.Mesh(goldRingGeo, goldRingMat);
-    goldRing.rotation.x = Math.PI / 2;
-    goldRing.position.y = 0.12;
-    pedestalGroup.add(goldRing);
-
-    pedestalGroup.position.set(0, -playerHeight * 0.46, 0);
-    this.playerGroup.add(pedestalGroup);
-    this.playerPedestal = pedestalGroup;
-
-    // 2. 3D Figurine Feet / Shoes
+    // 1. 3D Figurine Feet / Shoes
     const shoeMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 0.3,
