@@ -3,6 +3,7 @@ import { GameSettings, JudgmentEvent, SimState } from './sim/types';
 import { ThreeScene } from './view/ThreeScene';
 import { PhaserOverlay } from './overlay/PhaserOverlay';
 import { soundManager } from '../features/audio/soundManager';
+import i18n from '@/shared/i18n';
 
 export interface GameManagerConfig {
   container3D: HTMLElement;
@@ -216,12 +217,12 @@ export class GameManager {
   };
 
   private handleFirstClimaxWarning = () => {
-    this.overlay.showClimaxAlert('BIG SHADOW INCOMING');
+    this.overlay.showClimaxAlert(i18n.t('bigShadowAlert'));
   };
 
   private handleFirstShadowHint = () => {
     const hintPos = this.threeScene.projectWorldToScreen(50, 2, 0);
-    this.overlay.showShadowHint(50, 'DROPS HERE', hintPos);
+    this.overlay.showShadowHint(50, i18n.t('shadowHint'), hintPos);
   };
 
   private handleItemCaught = (event: { itemStreak: number; scoreGained: number; isDouble: boolean; x: number }) => {

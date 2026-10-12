@@ -196,7 +196,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
               }}
             >
               {loadingRankings ? (
-                <div style={{ textAlign: 'center', padding: '12px', color: '#94a3b8' }}>Loading...</div>
+                <div style={{ textAlign: 'center', padding: '12px', color: '#94a3b8' }}>{t('loading', 'Loading...')}</div>
               ) : rankings.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '12px', color: '#94a3b8' }}>
                   {t('noRankingsYet')}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GameSettings, DurationOption, DifficultyLevel, LivesOption } from '@/game/sim/types';
-import { getEffectiveCharacters } from '@/entities/character/characterModel';
+import { getEffectiveCharacters, getCharacterDisplayName } from '@/entities/character/characterModel';
 import { UserProfile, updateNickname } from '@/features/auth/authService';
 
 interface HomePageProps {
@@ -11,7 +11,7 @@ interface HomePageProps {
 }
 
 export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateUser }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Settings states with specified defaults: 60s, diff 1, lives 3
   const [duration, setDuration] = useState<DurationOption>(60);
@@ -141,7 +141,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
                       LV {d}
                     </span>
                     <span style={{ fontSize: '10px', color: '#94a3b8', whiteSpace: 'nowrap' }}>
-                      {d === 1 ? 'Easy' : d === 2 ? 'Normal' : 'Hard'}
+                      {d === 1 ? t('diffEasy', 'Easy') : d === 2 ? t('diffNormal', 'Normal') : t('diffHard', 'Hard')}
                     </span>
                   </button>
                 ))}
@@ -151,7 +151,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
             {/* Lives Select */}
             <div>
               <label style={{ fontSize: 'clamp(10px, 1.3vh, 12px)', fontWeight: 600, color: '#e2e8f0', display: 'block', marginBottom: '3px' }}>
-                ❤️ {t('lives')} (Life Risk multiplier)
+                ❤️ {t('lives')} ({t('lifeRiskMultiplier', 'Life Risk multiplier')})
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
                 {([1, 2, 3, 4, 5] as LivesOption[]).map((l) => (
@@ -287,7 +287,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, onStartGame, onUpdateU
                         lineHeight: 1.1,
                       }}
                     >
-                      {char.name}
+                      {getCharacterDisplayName(char, i18n.language)}
                     </span>
                   </button>
                 ))}

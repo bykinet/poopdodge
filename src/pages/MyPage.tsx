@@ -120,7 +120,7 @@ export const MyPage: React.FC<MyPageProps> = ({
             onClick={onBack}
             style={{ padding: '6px 14px', fontSize: '13px' }}
           >
-            Back
+            {t('back', 'Back')}
           </button>
         </div>
 
@@ -142,7 +142,7 @@ export const MyPage: React.FC<MyPageProps> = ({
               style={{ width: 'auto', background: 'var(--primary)', color: '#000', whiteSpace: 'nowrap' }}
               onClick={handleSaveNickname}
             >
-              {nicknameSaved ? 'Saved!' : 'Save'}
+              {nicknameSaved ? t('saved', 'Saved!') : t('save', 'Save')}
             </button>
           </div>
         </div>
@@ -161,14 +161,14 @@ export const MyPage: React.FC<MyPageProps> = ({
               fontSize: '14px',
             }}
           >
-            {user.email || (user.phoneE164 ? `+82 ${user.phoneE164}` : 'Guest Player')}
+            {user.email || (user.phoneE164 ? `+82 ${user.phoneE164}` : t('guestPlayer', 'Guest Player'))}
           </div>
         </div>
 
         {/* 3. Password */}
         <div>
           <label style={{ fontSize: '13px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>
-            Password
+            {t('passwordLabel', 'Password')}
           </label>
           <div
             style={{
@@ -232,7 +232,7 @@ export const MyPage: React.FC<MyPageProps> = ({
                 className="btn-full"
                 style={{ background: '#38bdf8', color: '#000', padding: '10px' }}
               >
-                Update Password
+                {t('updatePasswordBtn', 'Update Password')}
               </button>
             </form>
           )}
@@ -289,7 +289,7 @@ export const MyPage: React.FC<MyPageProps> = ({
                       textAlign: 'center',
                     }}
                   >
-                    {uploadingSlot === slotIdx ? '...' : customUrl ? 'Change' : t('uploadSlot')}
+                    {uploadingSlot === slotIdx ? '...' : customUrl ? t('changeSlot', 'Change') : t('uploadSlot')}
                     <input
                       type="file"
                       accept="image/*"

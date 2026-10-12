@@ -7,6 +7,7 @@ import { soundManager } from '@/features/audio/soundManager';
 import { GameSessionRecord, saveGameSession } from '@/features/session/sessionService';
 import { UserProfile } from '@/features/auth/authService';
 import { getEffectiveCharacters } from '@/entities/character/characterModel';
+import { getLanguageLabel } from '@/shared/i18n';
 
 interface PlayPageProps {
   user: UserProfile;
@@ -274,8 +275,8 @@ export const PlayPage: React.FC<PlayPageProps> = ({
             {/* Right side: Language, Logout, My Page, Dev Tools */}
             <div className="hud-right-group">
               {toggleLanguage && (
-                <button type="button" className="lang-btn hud-nav-btn" onClick={toggleLanguage}>
-                  {i18n.language === 'en' ? '한국어' : 'English'}
+                <button type="button" className="lang-btn hud-nav-btn" onClick={toggleLanguage} title="Language">
+                  {getLanguageLabel(i18n.language)}
                 </button>
               )}
 

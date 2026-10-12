@@ -11,6 +11,7 @@ import { GameSessionRecord } from '@/features/session/sessionService';
 import { Volume2, VolumeX } from 'lucide-react';
 import { soundManager } from '@/features/audio/soundManager';
 import '@/shared/i18n';
+import { getNextLanguage, getLanguageLabel } from '@/shared/i18n';
 
 type PageRoute = 'first' | 'home' | 'play' | 'result' | 'mypage';
 
@@ -66,8 +67,11 @@ export const App: React.FC = () => {
   };
 
   const toggleLanguage = () => {
-    const nextLang = i18n.language === 'en' ? 'ko' : 'en';
+    const nextLang = getNextLanguage(i18n.language);
     i18n.changeLanguage(nextLang);
+    try {
+      localStorage.setItem('poopdodge_lang', nextLang);
+    } catch {}
   };
 
   const toggleSound = () => {
@@ -94,8 +98,8 @@ export const App: React.FC = () => {
 
           {/* Right Navigation Actions */}
           <div className="app-nav-group">
-            <button type="button" className="lang-btn" onClick={toggleLanguage}>
-              {i18n.language === 'en' ? '한국어' : 'English'}
+            <button type="button" className="lang-btn" onClick={toggleLanguage} title="Language">
+              {getLanguageLabel(i18n.language)}
             </button>
 
             {user && currentPage !== 'first' && (

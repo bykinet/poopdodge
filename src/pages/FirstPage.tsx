@@ -279,7 +279,7 @@ export const FirstPage: React.FC<FirstPageProps> = ({ onLoginSuccess }) => {
                 }}
                 onClick={() => setAuthMethod('email')}
               >
-                Email
+                {t('emailTab', 'Email')}
               </button>
               <button
                 type="button"
@@ -295,7 +295,7 @@ export const FirstPage: React.FC<FirstPageProps> = ({ onLoginSuccess }) => {
                 }}
                 onClick={() => setAuthMethod('phone')}
               >
-                Phone
+                {t('phoneTab', 'Phone')}
               </button>
             </div>
 
